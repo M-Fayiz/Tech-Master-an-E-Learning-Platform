@@ -12,6 +12,16 @@ class AuthController {
     constructor(_authService) {
         this._authService = _authService;
     }
+    getClientContext(req) {
+        const forwardedFor = req.headers["x-forwarded-for"];
+        const ipAddress = Array.isArray(forwardedFor)
+            ? forwardedFor[0]
+            : forwardedFor?.split(",")[0]?.trim() ?? req.ip;
+        return {
+            ip: ipAddress,
+            userAgent: req.get("user-agent") ?? undefined,
+        };
+    }
     extractAccessToken(req) {
         const cookieToken = req.cookies?.accessToken;
         if (cookieToken) {
@@ -34,11 +44,12 @@ class AuthController {
     }
     async verifyEmail(req, res, next) {
         try {
-            const token = await this._authService.verifyEmail(req.body);
+            const token = await this._authService.verifyEmail(req.body, this.getClientContext(req));
             (0, cookie_util_1.setAccessToken)(res, token.accessToken);
             (0, cookie_util_1.setRefreshToken)(res, token.refreshToken);
             res.status(http_status_const_1.HttpStatus.OK).json((0, response_util_1.successResponse)(error_message_const_1.HttpResponse.LOGGED_IN_SUCCESSFULLY, {
                 token: token.accessToken,
+                user: token.user,
             }));
         }
         catch (error) {
@@ -62,12 +73,13 @@ class AuthController {
         try {
             const { refreshToken } = req.cookies;
             if (!refreshToken) {
-                throw (0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.FORBIDDEN, error_message_const_1.HttpResponse.REFRESH_TOKEN_EXPIRED);
+                throw (0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.UNAUTHORIZED, error_message_const_1.HttpResponse.REFRESH_TOKEN_EXPIRED);
             }
-            const { newAccessToken, payload } = await this._authService.refreshAccessToken(refreshToken);
+            const { newAccessToken, newRefreshToken, user } = await this._authService.refreshAccessToken(refreshToken, this.getClientContext(req));
             (0, cookie_util_1.setAccessToken)(res, newAccessToken);
+            (0, cookie_util_1.setRefreshToken)(res, newRefreshToken);
             res.status(http_status_const_1.HttpStatus.OK).json((0, response_util_1.successResponse)(error_message_const_1.HttpResponse.OK, {
-                user: payload,
+                user,
                 token: newAccessToken,
             }));
         }
@@ -78,7 +90,7 @@ class AuthController {
     async login(req, res, next) {
         try {
             const { email, password } = req.body;
-            const tokensAndUserData = await this._authService.login(email, password);
+            const tokensAndUserData = await this._authService.login(email, password, this.getClientContext(req));
             (0, cookie_util_1.setAccessToken)(res, tokensAndUserData.accessToken);
             (0, cookie_util_1.setRefreshToken)(res, tokensAndUserData.refreshToken);
             res.status(http_status_const_1.HttpStatus.OK).json((0, response_util_1.successResponse)(error_message_const_1.HttpResponse.LOGGED_IN_SUCCESSFULLY, {
@@ -92,6 +104,7 @@ class AuthController {
     }
     async logout(req, res, next) {
         try {
+            await this._authService.logout(req.cookies?.refreshToken);
             (0, clearCookies_util_1.clearCookies)(res);
             res
                 .status(http_status_const_1.HttpStatus.OK)

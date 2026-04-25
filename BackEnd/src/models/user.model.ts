@@ -116,6 +116,7 @@ export interface IPayload {
   name?: string;
   email: string;
   role: IRole;
+  sessionId?: Types.ObjectId;
   isVerified?: boolean;
   ApprovalStatus?: mentorApprovalStatus;
   isRequested?: boolean;

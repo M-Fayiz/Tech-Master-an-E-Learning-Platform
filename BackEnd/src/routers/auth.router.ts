@@ -8,9 +8,11 @@ import { AuthController } from "../controllers/implementation/AuthController";
 import { registerSchema } from "../utils/zod";
 import passport from "../utils/passport.util";
 import { env } from "../config/env.config";
+import { SessionRepository } from "../repository/implementation/SessionRepository";
 
 const userRepository = new UserRepository();
-const authService = new AuthService(userRepository);
+const sessionRepository = new SessionRepository();
+const authService = new AuthService(userRepository, sessionRepository);
 const authController = new AuthController(authService);
 
 authRouter.post(

@@ -48,6 +48,7 @@ export interface IPayloadDTO {
   _id: Types.ObjectId;
   email: string;
   role: string;
+  sessionId?: Types.ObjectId;
 }
 
 export type RoleModelMap = {

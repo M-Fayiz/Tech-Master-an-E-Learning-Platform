@@ -52,12 +52,15 @@ intitializeSocket(server);
 app.use(passport.initialize());
 app.use(cors(corsSetUp));
 
-app.all("/api/v1/health", (_req, res) => {
+app.all("/api/v1/health", (req, res) => {
+  
   res.status(HttpStatusCode.Ok).json({
     status: HttpResponse.OK,
     timestamp: Date.now(),
   });
 });
+
+
 
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);

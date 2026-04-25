@@ -9,9 +9,23 @@ import { clearCookies } from "../../utils/clearCookies.util";
 import { setAccessToken, setRefreshToken } from "../../utils/cookie.util";
 import { IUserModel } from "../../models/user.model";
 import { env } from "../../config/env.config";
+import { IAuthClientContext } from "../../services/interface/IAuthService";
 
 export class AuthController implements IAuthController {
   constructor(private _authService: IAuthService) {}
+
+  private getClientContext(req: Request): IAuthClientContext {
+    const forwardedFor = req.headers["x-forwarded-for"];
+    
+    const ipAddress = Array.isArray(forwardedFor)
+      ? forwardedFor[0]
+      : forwardedFor?.split(",")[0]?.trim() ?? req.ip;
+
+    return {
+      ip: ipAddress,
+      userAgent: req.get("user-agent") ?? undefined,
+    };
+  }
 
   private extractAccessToken(req: Request): string | null {
     const cookieToken = req.cookies?.accessToken;
@@ -42,12 +56,16 @@ export class AuthController implements IAuthController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const token = await this._authService.verifyEmail(req.body);
+      const token = await this._authService.verifyEmail(
+        req.body,
+        this.getClientContext(req),
+      );
       setAccessToken(res, token.accessToken);
       setRefreshToken(res, token.refreshToken);
       res.status(HttpStatus.OK).json(
         successResponse(HttpResponse.LOGGED_IN_SUCCESSFULLY, {
           token: token.accessToken,
+          user: token.user,
         }),
       );
     } catch (error) {
@@ -82,18 +100,22 @@ export class AuthController implements IAuthController {
 
       if (!refreshToken) {
         throw createHttpError(
-          HttpStatus.FORBIDDEN,
+          HttpStatus.UNAUTHORIZED,
           HttpResponse.REFRESH_TOKEN_EXPIRED,
         );
       }
 
-      const { newAccessToken, payload } =
-        await this._authService.refreshAccessToken(refreshToken);
+      const { newAccessToken, newRefreshToken, user } =
+        await this._authService.refreshAccessToken(
+          refreshToken,
+          this.getClientContext(req),
+        );
 
       setAccessToken(res, newAccessToken);
+      setRefreshToken(res, newRefreshToken);
       res.status(HttpStatus.OK).json(
         successResponse(HttpResponse.OK, {
-          user: payload,
+          user,
           token: newAccessToken,
         }),
       );
@@ -106,7 +128,11 @@ export class AuthController implements IAuthController {
     try {
       const { email, password } = req.body;
 
-      const tokensAndUserData = await this._authService.login(email, password);
+      const tokensAndUserData = await this._authService.login(
+        email,
+        password,
+        this.getClientContext(req),
+      );
       setAccessToken(res, tokensAndUserData.accessToken);
       setRefreshToken(res, tokensAndUserData.refreshToken);
 
@@ -123,6 +149,7 @@ export class AuthController implements IAuthController {
 
   async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      await this._authService.logout(req.cookies?.refreshToken);
       clearCookies(res);
       res
         .status(HttpStatus.OK)
