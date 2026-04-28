@@ -3,7 +3,9 @@ import type { AxiosInstance } from "axios";
 import { AuthService } from "../service/auth.service";
 import { HttpStatusCode } from "@/constants/statusCode";
 import { router } from "@/router/AppRouter";
-import { AUTH_TOKEN } from "@/constants/authToken.const";
+import { getAccessToken } from "@/store/accessToken.store";
+
+let refreshRequest: Promise<unknown> | null = null;
 
 const createInstance = (): AxiosInstance => {
   const instance = axios.create({
@@ -12,7 +14,7 @@ const createInstance = (): AxiosInstance => {
   });
 
   instance.interceptors.request.use((config) => {
-    const accessToken = localStorage.getItem(AUTH_TOKEN.ACCESS_TOKEN);
+    const accessToken = getAccessToken();
 
     if (accessToken) {
       config.headers = config.headers ?? {};
@@ -39,7 +41,10 @@ const createInstance = (): AxiosInstance => {
       ) {
         originalRequest._retry = true;
         try {
-          await AuthService.refreshToken();
+          refreshRequest ??= AuthService.refreshToken().finally(() => {
+            refreshRequest = null;
+          });
+          await refreshRequest;
           return instance(originalRequest);
         } catch {
           window.dispatchEvent(new Event("force-logout"));
