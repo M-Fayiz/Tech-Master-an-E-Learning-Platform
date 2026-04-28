@@ -11,30 +11,36 @@ import { throwAxiosError } from "@/utility/throwErrot";
 import { ApiError } from "@/utility/apiError.util";
 import { sharedService } from "./shared.service";
 import { HttpStatusCode } from "@/constants/statusCode";
-import { AUTH_TOKEN } from "@/constants/authToken.const";
+import {
+  clearAccessToken,
+  getAccessToken,
+  setAccessToken,
+} from "@/store/accessToken.store";
 
-const storeAccessToken = (token?: string) => {
-  if (token) {
-    localStorage.setItem(AUTH_TOKEN.ACCESS_TOKEN, token);
-  }
-};
-
-const clearAccessToken = () => {
-  localStorage.removeItem(AUTH_TOKEN.ACCESS_TOKEN);
-};
-
-const consumeRedirectToken = () => {
+const stripRedirectToken = () => {
   const url = new URL(window.location.href);
-  const token = url.searchParams.get("token");
-
-  if (!token) {
-    return null;
+  if (!url.searchParams.has("token")) {
+    return;
   }
 
-  storeAccessToken(token);
   url.searchParams.delete("token");
   window.history.replaceState({}, document.title, url.toString());
-  return token;
+};
+
+const hydrateUserProfile = async (
+  user: IDecodedUserType,
+): Promise<IDecodedUserType> => {
+  if (!user.profile) {
+    return user;
+  }
+
+  const profileUrl = await sharedService.getPreSignedDownloadURL(user.profile);
+
+  if (!profileUrl) {
+    return user;
+  }
+
+  return { ...user, profile: profileUrl };
 };
 
 export const AuthService = {
@@ -51,33 +57,30 @@ export const AuthService = {
   verifyEmail: async (
     email: string | null,
     token: string | null,
-  ): Promise<{ status: number; message: string }> => {
+  ): Promise<{
+    status: number;
+    message: string;
+    user: IDecodedUserType;
+    token?: string;
+  }> => {
     try {
       const response = await axiosInstance.post(API.Auth.VERIFY_EMAIL_URL, {
         token,
         email,
       });
-      return response.data.message;
+
+      setAccessToken(response.data?.token);
+      response.data.user = await hydrateUserProfile(response.data.user);
+
+      return response.data;
     } catch (error) {
       throwAxiosError(error);
     }
   },
   authME: async (): Promise<IDecodedUserType> => {
     try {
-      const response = await axiosInstance.post(
-        API.Auth.AUTH_URL,
-        {},
-        { withCredentials: true },
-      );
-      if (response.data.user.profile) {
-        const profilrUrl = await sharedService.getPreSignedDownloadURL(
-          response.data.user.profile,
-        );
-
-        if (profilrUrl) {
-          response.data.user.profile = profilrUrl;
-        }
-      }
+      const response = await axiosInstance.post(API.Auth.AUTH_URL, {});
+      response.data.user = await hydrateUserProfile(response.data.user);
       return response.data?.user;
     } catch (error) {
       throwAxiosError(error);
@@ -86,31 +89,43 @@ export const AuthService = {
 
   restoreSession: async (): Promise<IDecodedUserType> => {
     try {
-      consumeRedirectToken();
-      return await AuthService.authME();
+      stripRedirectToken();
+
+      if (getAccessToken()) {
+        try {
+          return await AuthService.authME();
+        } catch (error) {
+          if (
+            !(error instanceof ApiError) ||
+            error.status !== HttpStatusCode.UNAUTHORIZED
+          ) {
+            throw error;
+          }
+        }
+      }
+
+      const user = await AuthService.refreshToken();
+      if (!user) {
+        throw new ApiError("Unauthorized", HttpStatusCode.UNAUTHORIZED);
+      }
+
+      return user;
     } catch (error) {
-      if (
-        error instanceof ApiError &&
-        error.status === HttpStatusCode.UNAUTHORIZED
-      ) {
-        await AuthService.refreshToken();
-        return await AuthService.authME();
+      if (error instanceof ApiError) {
+        throw error;
       }
       throwAxiosError(error);
     }
   },
 
   //  axios interseptor
-  refreshToken: async (): Promise<{
-    id: string;
-    email: string;
-    role: string;
-  } | null> => {
+  refreshToken: async (): Promise<IDecodedUserType | null> => {
     try {
       const response = await axiosInstance.get(API.Auth.REFRESH_TOKEN_URL, {
         withCredentials: true,
       });
-      storeAccessToken(response?.data?.token);
+      setAccessToken(response?.data?.token);
+      response.data.user = await hydrateUserProfile(response.data.user);
       return response?.data.user;
     } catch (error) {
       clearAccessToken();
@@ -127,7 +142,8 @@ export const AuthService = {
   }> => {
     try {
       const response = await axiosInstance.post(API.Auth.LOGIN_URL, data);
-      storeAccessToken(response?.data?.token);
+      setAccessToken(response?.data?.token);
+      response.data.user = await hydrateUserProfile(response.data.user);
       return response?.data;
     } catch (error) {
       throwAxiosError(error);
@@ -147,10 +163,7 @@ export const AuthService = {
     }
   },
   googleAuth: async (role: UserRoleType): Promise<void> => {
-    console.log("role ,", role);
     try {
-      // window.location.href = `${import.meta.env.VITE_BASE_URL}/auth/google?role:${role}`;
-
       window.location.href = `${import.meta.env.VITE_BASE_URL}${API.Auth.GOOGLE_AUTH(role)}`;
     } catch (error) {
       throwAxiosError(error);
@@ -183,5 +196,8 @@ export const AuthService = {
     } catch (error) {
       throwAxiosError(error);
     }
+  },
+  clearClientAuth: () => {
+    clearAccessToken();
   },
 };

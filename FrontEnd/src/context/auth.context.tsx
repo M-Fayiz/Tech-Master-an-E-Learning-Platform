@@ -10,6 +10,7 @@ import {
   AuthStatus,
   type AuthStatusType,
   type IDecodedUserType,
+  type ILogin,
   type ISignUp,
 } from "../types/auth.types";
 import { AuthService } from "../service/auth.service";
@@ -20,7 +21,7 @@ interface User extends IDecodedUserType {}
 interface AuthContextProps {
   user: User | null;
   status: AuthStatusType;
-  login: (data: ISignUp) => Promise<User>;
+  login: (data: ILogin) => Promise<User>;
   signup: (
     data: ISignUp,
   ) => Promise<{ status: number; message: string; email: string }>;
@@ -91,6 +92,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const handleForceLogout = () => {
+      AuthService.clearClientAuth();
       setUser(null);
       setStatus(AuthStatus.GUEST);
     };
@@ -99,7 +101,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => window.removeEventListener("force-logout", handleForceLogout);
   }, []);
 
-  const login = async (data: ISignUp) => {
+  const login = async (data: ILogin) => {
     authRequestIdRef.current += 1;
     setStatus(AuthStatus.CHECKING);
 
