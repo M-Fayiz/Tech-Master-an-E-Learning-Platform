@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Spinner } from "../templates/Spinner";
 import { useAuth } from "../../context/auth.context";
-import { AuthStatus } from "@/types/auth.types";
+import { AuthStatus, UserRole } from "@/types/auth.types";
 
 const GoogleAuthCallback = () => {
   const navigate = useNavigate();
@@ -31,7 +31,14 @@ const GoogleAuthCallback = () => {
       return;
     }
 
-    navigate("/", { replace: true });
+    const dashboardPath =
+      user.role === UserRole.ADMIN
+        ? "/admin/dashboard"
+        : user.role === UserRole.MENTOR
+          ? "/mentor/dashboard"
+          : "/learner/dashboard";
+
+    navigate(dashboardPath, { replace: true });
   }, [callbackResolved, navigate, status, user]);
 
   return <Spinner fullScreen size="large" variant="theme" />;

@@ -23,10 +23,6 @@ class AuthController {
         };
     }
     extractAccessToken(req) {
-        const cookieToken = req.cookies?.accessToken;
-        if (cookieToken) {
-            return cookieToken;
-        }
         const authorizationHeader = req.headers.authorization;
         if (authorizationHeader?.startsWith("Bearer ")) {
             return authorizationHeader.slice(7).trim();
@@ -45,7 +41,6 @@ class AuthController {
     async verifyEmail(req, res, next) {
         try {
             const token = await this._authService.verifyEmail(req.body, this.getClientContext(req));
-            (0, cookie_util_1.setAccessToken)(res, token.accessToken);
             (0, cookie_util_1.setRefreshToken)(res, token.refreshToken);
             res.status(http_status_const_1.HttpStatus.OK).json((0, response_util_1.successResponse)(error_message_const_1.HttpResponse.LOGGED_IN_SUCCESSFULLY, {
                 token: token.accessToken,
@@ -76,7 +71,6 @@ class AuthController {
                 throw (0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.UNAUTHORIZED, error_message_const_1.HttpResponse.REFRESH_TOKEN_EXPIRED);
             }
             const { newAccessToken, newRefreshToken, user } = await this._authService.refreshAccessToken(refreshToken, this.getClientContext(req));
-            (0, cookie_util_1.setAccessToken)(res, newAccessToken);
             (0, cookie_util_1.setRefreshToken)(res, newRefreshToken);
             res.status(http_status_const_1.HttpStatus.OK).json((0, response_util_1.successResponse)(error_message_const_1.HttpResponse.OK, {
                 user,
@@ -91,7 +85,6 @@ class AuthController {
         try {
             const { email, password } = req.body;
             const tokensAndUserData = await this._authService.login(email, password, this.getClientContext(req));
-            (0, cookie_util_1.setAccessToken)(res, tokensAndUserData.accessToken);
             (0, cookie_util_1.setRefreshToken)(res, tokensAndUserData.refreshToken);
             res.status(http_status_const_1.HttpStatus.OK).json((0, response_util_1.successResponse)(error_message_const_1.HttpResponse.LOGGED_IN_SUCCESSFULLY, {
                 token: tokensAndUserData.accessToken,
@@ -142,9 +135,8 @@ class AuthController {
                 return;
             }
             const data = await this._authService.generateToken(req.user);
-            (0, cookie_util_1.setAccessToken)(res, data.accessToken);
             (0, cookie_util_1.setRefreshToken)(res, data.refreshToken);
-            res.redirect(`${env_config_1.env.CLIENT_URL_2}/?token=${data.accessToken}`);
+            res.redirect(`${env_config_1.env.CLIENT_URL_2}/auth/google/callback`);
         }
         catch (error) {
             res.redirect(`${env_config_1.env.CLIENT_ORGIN}/auth/signup`);

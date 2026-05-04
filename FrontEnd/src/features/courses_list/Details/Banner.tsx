@@ -9,7 +9,7 @@ interface BannerProps {
 import { OrderService } from "@/service/order.service";
 import { useAuth } from "@/context/auth.context";
 import { toast } from "sonner";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Badge } from "@/components/ui/shadcn-io/ThemeBadge";
 import { StarRating } from "@/pages/course-page/Rating";
 import { Users2 } from "lucide-react";
@@ -43,9 +43,12 @@ const Banner: React.FC<BannerProps> = ({
   category,
 }) => {
   const { user } = useAuth();
-
+  const navigate = useNavigate()
   const handlePaymentPage = async () => {
     try {
+      if(!user){
+        navigate('/auth/login')
+      }
       const result = await OrderService.createPayment(courseId, user!.id);
 
       if (result) {
@@ -91,6 +94,14 @@ const Banner: React.FC<BannerProps> = ({
           )}
           <div className="absolute bottom-3 left-3"></div>
           <div className="mt-5">
+            {!user&&(
+              <button
+                        onClick={handlePaymentPage}
+                        className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-3 rounded-lg shadow-md transition"
+                      >
+                        Enroll Now
+                      </button>
+            )}
             {user?.role == "learner" && (
               <>
                 {user?.role === "learner" && (

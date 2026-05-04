@@ -13,10 +13,9 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const redis_config_1 = __importDefault(require("../config/redis.config"));
 async function verifyUser(req, _res, next) {
     try {
-        const bearerToken = req.headers.authorization?.startsWith("Bearer ")
+        const accessToken = req.headers.authorization?.startsWith("Bearer ")
             ? req.headers.authorization.slice(7).trim()
             : null;
-        const accessToken = req.cookies?.accessToken ?? bearerToken;
         if (!accessToken) {
             throw (0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.UNAUTHORIZED, error_message_const_1.HttpResponse.UNAUTHORIZED);
         }

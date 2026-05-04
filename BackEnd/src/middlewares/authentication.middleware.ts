@@ -13,10 +13,9 @@ export async function verifyUser(
   next: NextFunction,
 ) {
   try {
-    const bearerToken = req.headers.authorization?.startsWith("Bearer ")
+    const accessToken = req.headers.authorization?.startsWith("Bearer ")
       ? req.headers.authorization.slice(7).trim()
       : null;
-    const accessToken = req.cookies?.accessToken ?? bearerToken;
 
     if (!accessToken) {
       throw createHttpError(HttpStatus.UNAUTHORIZED, HttpResponse.UNAUTHORIZED);

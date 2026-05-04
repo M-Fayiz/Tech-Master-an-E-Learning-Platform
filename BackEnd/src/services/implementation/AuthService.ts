@@ -28,11 +28,12 @@ import { IUserDTO } from "../../types/dtos.type/user.dto.types";
 import { payloadDTO } from "../../dtos/payload.dto";
 import logger from "../../config/logger.config";
 import { Types } from "mongoose";
+import { env } from "../../config/env.config";
+import { parseDurationToMs } from "../../utils/duration.util";
 
 export class AuthService implements IAuthService {
   private readonly refreshSessionMaxAge =
-    Number(process.env.REFRESH_TOKEN_MAX_AGE ?? 7 * 24 * 60 * 60 * 1000) ||
-    7 * 24 * 60 * 60 * 1000;
+    parseDurationToMs(env.REFRESH_TOKEN_MAX_AGE, 7 * 24 * 60 * 60 * 1000);
 
   constructor(
     private _userRepo: IUserRepo,
@@ -226,7 +227,9 @@ export class AuthService implements IAuthService {
     refreshToken: string;
     MappedUser: IUserDTO;
   }> {
+    console.log('email:',email)
     const user = await this._userRepo.findUserByEmail(email);
+    console.log('user:',user)
     if (!user) {
       throw createHttpError(HttpStatus.NOT_FOUND, HttpResponse.USER_NOT_FOUND);
     }

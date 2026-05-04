@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import { io, Socket } from "socket.io-client";
 import { useAuth } from "./auth.context";
+import { getAccessToken } from "@/store/accessToken.store";
 
 interface SocketContextType {
   socket: Socket | null;
@@ -37,7 +38,16 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
+      autoConnect: false,
     });
+
+    const syncSocketAuth = () => {
+      newSocket.auth = { token: getAccessToken() };
+    };
+
+    syncSocketAuth();
+    newSocket.io.on("reconnect_attempt", syncSocketAuth);
+    newSocket.connect();
 
     newSocket.on(SocketEvents.CONNECT, () => {
       console.log("✅ Socket connected:", newSocket.id);
@@ -54,6 +64,7 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({
     setSocket(newSocket);
 
     return () => {
+      newSocket.io.off("reconnect_attempt", syncSocketAuth);
       newSocket.disconnect();
       setSocket(null);
     };

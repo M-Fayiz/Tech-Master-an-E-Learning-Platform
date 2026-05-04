@@ -18,12 +18,13 @@ const redisKey_const_1 = require("../../const/redisKey.const");
 const user_dto_1 = require("../../dtos/user.dto");
 const payload_dto_1 = require("../../dtos/payload.dto");
 const logger_config_1 = __importDefault(require("../../config/logger.config"));
+const env_config_1 = require("../../config/env.config");
+const duration_util_1 = require("../../utils/duration.util");
 class AuthService {
     constructor(_userRepo, _sessionRepo) {
         this._userRepo = _userRepo;
         this._sessionRepo = _sessionRepo;
-        this.refreshSessionMaxAge = Number(process.env.REFRESH_TOKEN_MAX_AGE ?? 7 * 24 * 60 * 60 * 1000) ||
-            7 * 24 * 60 * 60 * 1000;
+        this.refreshSessionMaxAge = (0, duration_util_1.parseDurationToMs)(env_config_1.env.REFRESH_TOKEN_MAX_AGE, 7 * 24 * 60 * 60 * 1000);
     }
     ensureUserCanAuthenticate(user) {
         if (!user.isActive) {
@@ -141,7 +142,9 @@ class AuthService {
         };
     }
     async login(email, password, clientContext) {
+        console.log('email:', email);
         const user = await this._userRepo.findUserByEmail(email);
+        console.log('user:', user);
         if (!user) {
             throw (0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.NOT_FOUND, error_message_const_1.HttpResponse.USER_NOT_FOUND);
         }

@@ -34,13 +34,17 @@ const hydrateUserProfile = async (
     return user;
   }
 
-  const profileUrl = await sharedService.getPreSignedDownloadURL(user.profile);
+  try {
+    const profileUrl = await sharedService.getPreSignedDownloadURL(user.profile);
 
-  if (!profileUrl) {
+    if (!profileUrl) {
+      return user;
+    }
+
+    return { ...user, profile: profileUrl };
+  } catch {
     return user;
   }
-
-  return { ...user, profile: profileUrl };
 };
 
 export const AuthService = {

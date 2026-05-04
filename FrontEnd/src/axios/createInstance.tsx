@@ -64,7 +64,8 @@ const createInstance = (): AxiosInstance => {
       }
 
       if (status === HttpStatusCode.LOCKED) {
-        router.navigate("/auth/login");
+        window.dispatchEvent(new Event("force-block"));
+        router.navigate("/blocked");
         return;
       }
 

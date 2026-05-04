@@ -6,7 +6,7 @@ import { HttpResponse } from "../../const/error-message.const";
 import { successResponse } from "../../utils/response.util";
 import { createHttpError } from "../../utils/http-error";
 import { clearCookies } from "../../utils/clearCookies.util";
-import { setAccessToken, setRefreshToken } from "../../utils/cookie.util";
+import { setRefreshToken } from "../../utils/cookie.util";
 import { IUserModel } from "../../models/user.model";
 import { env } from "../../config/env.config";
 import { IAuthClientContext } from "../../services/interface/IAuthService";
@@ -28,11 +28,6 @@ export class AuthController implements IAuthController {
   }
 
   private extractAccessToken(req: Request): string | null {
-    const cookieToken = req.cookies?.accessToken;
-    if (cookieToken) {
-      return cookieToken;
-    }
-
     const authorizationHeader = req.headers.authorization;
     if (authorizationHeader?.startsWith("Bearer ")) {
       return authorizationHeader.slice(7).trim();
@@ -60,7 +55,6 @@ export class AuthController implements IAuthController {
         req.body,
         this.getClientContext(req),
       );
-      setAccessToken(res, token.accessToken);
       setRefreshToken(res, token.refreshToken);
       res.status(HttpStatus.OK).json(
         successResponse(HttpResponse.LOGGED_IN_SUCCESSFULLY, {
@@ -111,7 +105,6 @@ export class AuthController implements IAuthController {
           this.getClientContext(req),
         );
 
-      setAccessToken(res, newAccessToken);
       setRefreshToken(res, newRefreshToken);
       res.status(HttpStatus.OK).json(
         successResponse(HttpResponse.OK, {
@@ -133,7 +126,6 @@ export class AuthController implements IAuthController {
         password,
         this.getClientContext(req),
       );
-      setAccessToken(res, tokensAndUserData.accessToken);
       setRefreshToken(res, tokensAndUserData.refreshToken);
 
       res.status(HttpStatus.OK).json(
@@ -205,10 +197,9 @@ export class AuthController implements IAuthController {
 
       const data = await this._authService.generateToken(req.user as IUserModel);
 
-      setAccessToken(res, data.accessToken);
       setRefreshToken(res, data.refreshToken);
 
-      res.redirect(`${env.CLIENT_URL_2}/?token=${data.accessToken}`);
+      res.redirect(`${env.CLIENT_URL_2}/auth/google/callback`);
     } catch (error) {
       res.redirect(`${env.CLIENT_ORGIN}/auth/signup`);
       next(error);
