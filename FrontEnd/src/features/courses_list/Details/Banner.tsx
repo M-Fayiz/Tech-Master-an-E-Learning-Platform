@@ -94,14 +94,14 @@ const Banner: React.FC<BannerProps> = ({
           )}
           <div className="absolute bottom-3 left-3"></div>
           <div className="mt-5">
-            {!user&&(
-              <button
-                        onClick={handlePaymentPage}
-                        className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-3 rounded-lg shadow-md transition"
-                      >
-                        Enroll Now
-                      </button>
-            )}
+             {!user && (
+                <button
+                  onClick={handlePaymentPage}
+                  className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-3 rounded-lg shadow-md transition"
+                >
+                  Enroll Now
+                </button>
+              )}
             {user?.role == "learner" && (
               <>
                 {user?.role === "learner" && (
