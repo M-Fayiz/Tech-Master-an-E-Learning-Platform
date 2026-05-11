@@ -8,7 +8,7 @@ export const API = {
     AUTH_URL: "/auth/me",
     FORGOT_PASSWORD_URL: "/auth/forgot-password",
     RESET_PASSWORD_URL: "/auth/reset-password",
-    GOOGLE_AUTH: (role: string) => `/api/v1/auth/google?role:${role}`,
+    GOOGLE_AUTH: (role: string) => `/api/v1/auth/google?role=${role}`,
   },
   USER: {
     FETCH_USER_PROFILE:  `/users/me`,

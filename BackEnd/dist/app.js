@@ -45,7 +45,7 @@ const server = http_1.default.createServer(app);
 (0, socket_io_1.intitializeSocket)(server);
 app.use(passport_1.default.initialize());
 app.use((0, cors_1.default)(cors_config_1.corsSetUp));
-app.all("/api/v1/health", (_req, res) => {
+app.all("/api/v1/health", (req, res) => {
     res.status(axios_1.HttpStatusCode.Ok).json({
         status: error_message_const_1.HttpResponse.OK,
         timestamp: Date.now(),

@@ -7,6 +7,7 @@ import {
   mentorApprovalStatus,
 } from "../../types/user.types";
 import { IUserRepo } from "../../repository/interface/IUserRepo";
+import { ISessionRepository } from "../../repository/interface/ISessionRepository";
 import { hashPassword, comparePassword } from "../../utils/bcrypt.util";
 import { sendToken } from "../../utils/send-mail.util";
 import { v4 as uuidv4 } from "uuid";
@@ -14,23 +15,68 @@ import redisClient from "../../config/redis.config";
 import { HttpStatus } from "../../const/http-status.const";
 import { HttpResponse } from "../../const/error-message.const";
 import { createHttpError } from "../../utils/http-error";
-import { generateTokens } from "../../utils/jwt-token.util";
-import { IAuthService } from "../interface/IAuthService";
+import { generateAccessToken, verifyAccesToken } from "../../utils/jwt-token.util";
 import {
-  verifyAccesToken,
-  verifyRefreshToken,
-} from "../../utils/jwt-token.util";
-import { JwtPayload } from "jsonwebtoken";
+  IAuthClientContext,
+  IAuthService,
+} from "../interface/IAuthService";
 import { IPayload, IUserModel } from "../../models/user.model";
-import { generateSecureToken } from "../../utils/crypto.util";
+import { generateSecureToken, hashSecureToken } from "../../utils/crypto.util";
 import { redisPrefix } from "../../const/redisKey.const";
 import { userDTO } from "../../dtos/user.dto";
 import { IUserDTO } from "../../types/dtos.type/user.dto.types";
 import { payloadDTO } from "../../dtos/payload.dto";
 import logger from "../../config/logger.config";
+import { Types } from "mongoose";
+import { env } from "../../config/env.config";
+import { parseDurationToMs } from "../../utils/duration.util";
 
 export class AuthService implements IAuthService {
-  constructor(private _userRepo: IUserRepo) {}
+  private readonly refreshSessionMaxAge =
+    parseDurationToMs(env.REFRESH_TOKEN_MAX_AGE, 7 * 24 * 60 * 60 * 1000);
+
+  constructor(
+    private _userRepo: IUserRepo,
+    private _sessionRepo: ISessionRepository,
+  ) {}
+
+  private ensureUserCanAuthenticate(user: IUserModel | IMentor | ILearner | IAdmin) {
+    if (!user.isActive) {
+      throw createHttpError(HttpStatus.LOCKED, HttpResponse.USER_BLOCKED);
+    }
+
+    if (!user.isVerified) {
+      throw createHttpError(HttpStatus.FORBIDDEN, HttpResponse.EMAIL_NOT_VERIFIED);
+    }
+  }
+
+  private buildAccessToken(user: IUserModel | IMentor | ILearner | IAdmin) {
+    return generateAccessToken(payloadDTO(user));
+  }
+
+  private async createSessionTokens(
+    user: IUserModel | IMentor | ILearner | IAdmin,
+    clientContext?: IAuthClientContext,
+  ) {
+    const rawRefreshToken = generateSecureToken();
+    const session = await this._sessionRepo.createSession({
+      userId: user._id as Types.ObjectId,
+      tokenHash: hashSecureToken(rawRefreshToken),
+      userAgent: clientContext?.userAgent,
+      ip: clientContext?.ip,
+      lastUsedAt: new Date(),
+      expiresAt: new Date(Date.now() + this.refreshSessionMaxAge),
+    });
+
+    const accessToken = this.buildAccessToken(user);
+
+    return {
+      accessToken,
+      refreshToken: rawRefreshToken,
+      session,
+      mappedUser: userDTO(user),
+    };
+  }
 
   async signUp(user: IUser): Promise<string> {
     const isUserExist = await this._userRepo.findUserByEmail(user.email);
@@ -58,7 +104,8 @@ export class AuthService implements IAuthService {
   }
   async verifyEmail(
     data: IAuth,
-  ): Promise<{ accessToken: string; refreshToken: string }> {
+    clientContext?: IAuthClientContext,
+  ): Promise<{ accessToken: string; refreshToken: string; user: IUserDTO }> {
     const key = `${redisPrefix.VERIFY_EMAIL}:${data.token}`;
     const result = await redisClient.get(key);
 
@@ -97,9 +144,13 @@ export class AuthService implements IAuthService {
         HttpResponse.USER_CREATION_FAILED,
       );
     }
-    const payload = payloadDTO(newUser);
+    const sessionTokens = await this.createSessionTokens(newUser, clientContext);
 
-    return generateTokens(payload);
+    return {
+      accessToken: sessionTokens.accessToken,
+      refreshToken: sessionTokens.refreshToken,
+      user: sessionTokens.mappedUser,
+    };
   }
 
   async authMe(token: string): Promise<IUserDTO> {
@@ -117,55 +168,78 @@ export class AuthService implements IAuthService {
     if (!user) {
       throw createHttpError(HttpStatus.NOT_FOUND, HttpResponse.USER_NOT_FOUND);
     }
-    if (!user.isActive) {
-      throw createHttpError(HttpStatus.LOCKED, HttpResponse.USER_BLOCKED);
-    }
+    this.ensureUserCanAuthenticate(user);
 
     return userDTO(user);
   }
 
   async refreshAccessToken(
     token: string,
-  ): Promise<{ newAccessToken: string; payload: JwtPayload }> {
+    clientContext?: IAuthClientContext,
+  ): Promise<{
+    newAccessToken: string;
+    newRefreshToken: string;
+    user: IUserDTO;
+  }> {
     if (!token) {
       throw createHttpError(HttpStatus.NOT_FOUND, HttpResponse.USER_NOT_FOUND);
     }
-    const decode = verifyRefreshToken(token) as JwtPayload;
+    const currentSession = await this._sessionRepo.findSessionByTokenHash(
+      hashSecureToken(token),
+    );
 
-    if (!decode) {
-      logger.warn("refresh expired");
+    if (!currentSession) {
+      logger.warn("refresh session missing or expired");
       throw createHttpError(
         HttpStatus.UNAUTHORIZED,
         HttpResponse.REFRESH_TOKEN_EXPIRED,
       );
     }
 
-    const user = await this._userRepo.findUserByEmail(decode.email);
-    if (!user?.isActive) {
-      throw createHttpError(HttpStatus.LOCKED, HttpResponse.USER_BLOCKED);
+    await this._sessionRepo.touchSession(currentSession._id);
+
+    const user = await this._userRepo.findUserById(currentSession.userId);
+    if (!user) {
+      await this._sessionRepo.revokeSession(currentSession._id);
+      throw createHttpError(HttpStatus.NOT_FOUND, HttpResponse.USER_NOT_FOUND);
     }
+    this.ensureUserCanAuthenticate(user);
 
-    const payload = payloadDTO(user);
+    const nextSession = await this.createSessionTokens(user, clientContext);
+    await this._sessionRepo.revokeSession(
+      currentSession._id,
+      nextSession.session._id,
+    );
 
-    const { accessToken } = generateTokens(payload);
-    const newAccessToken = accessToken;
-    return { newAccessToken, payload };
+    return {
+      newAccessToken: nextSession.accessToken,
+      newRefreshToken: nextSession.refreshToken,
+      user: nextSession.mappedUser,
+    };
   }
 
   async login(
     email: string,
     password: string,
+    clientContext?: IAuthClientContext,
   ): Promise<{
     accessToken: string;
     refreshToken: string;
     MappedUser: IUserDTO;
   }> {
+    console.log('email:',email)
     const user = await this._userRepo.findUserByEmail(email);
+    console.log('user:',user)
     if (!user) {
       throw createHttpError(HttpStatus.NOT_FOUND, HttpResponse.USER_NOT_FOUND);
     }
-    if (!user.isActive) {
-      throw createHttpError(HttpStatus.FORBIDDEN, HttpResponse.USER_BLOCKED);
+    this.ensureUserCanAuthenticate(user);
+
+    if (!user.password) {
+      throw createHttpError(
+        HttpStatus.BAD_REQUEST,
+        HttpResponse.INVALID_CREDNTIALS,
+      );
     }
 
     const isMatch = await comparePassword(password, user.password);
@@ -177,9 +251,28 @@ export class AuthService implements IAuthService {
       );
     }
 
-    const MappedUser = userDTO(user);
-    const { accessToken, refreshToken } = generateTokens(payloadDTO(user));
-    return { accessToken, refreshToken, MappedUser };
+    const sessionTokens = await this.createSessionTokens(user, clientContext);
+    return {
+      accessToken: sessionTokens.accessToken,
+      refreshToken: sessionTokens.refreshToken,
+      MappedUser: sessionTokens.mappedUser,
+    };
+  }
+
+  async logout(refreshToken?: string): Promise<void> {
+    if (!refreshToken) {
+      return;
+    }
+
+    const currentSession = await this._sessionRepo.findSessionByTokenHash(
+      hashSecureToken(refreshToken),
+    );
+
+    if (!currentSession) {
+      return;
+    }
+
+    await this._sessionRepo.revokeSession(currentSession._id);
   }
 
   async forgotPassword(email: string): Promise<string> {
@@ -236,6 +329,7 @@ export class AuthService implements IAuthService {
         HttpResponse.SERVER_ERROR,
       );
     }
+    await this._sessionRepo.revokeUserSessions(result._id as Types.ObjectId);
     await redisClient.del(key);
     return result.email;
   }
@@ -243,15 +337,17 @@ export class AuthService implements IAuthService {
   async generateToken(user: IUser | IMentor | ILearner | IAdmin): Promise<{
     accessToken: string;
     refreshToken: string;
-    payload: JwtPayload;
+    user: IUserDTO;
   }> {
-    const payload: IPayload = {
-      _id: user._id,
-      email: user.email,
-      role: user.role,
-      ApprovalStatus: user.ApprovalStatus,
+    const sessionTokens = await this.createSessionTokens(
+      user as IUserModel,
+      undefined,
+    );
+
+    return {
+      accessToken: sessionTokens.accessToken,
+      refreshToken: sessionTokens.refreshToken,
+      user: sessionTokens.mappedUser,
     };
-    const { accessToken, refreshToken } = generateTokens(payload);
-    return { accessToken, refreshToken, payload };
   }
 }

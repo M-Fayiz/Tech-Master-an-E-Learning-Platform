@@ -4,10 +4,11 @@ import { A_tag } from "../../ui/Elements";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../../context/auth.context";
 import { User } from "lucide-react";
+import { AuthStatus } from "@/types/auth.types";
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const { user } = useAuth();
+  const { user, status } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -46,7 +47,9 @@ const Header: React.FC = () => {
             <A_tag href="#about" label="About" />
             {/* <A_tag href="#about" label="About"/> */}
 
-            {user?.role ? (
+            {status === AuthStatus.CHECKING ? (
+              <div className="w-12 h-6" />
+            ) : user?.role ? (
               <Link to={`/${user.role}/dashboard`}>
                 <User />
               </Link>
@@ -90,7 +93,9 @@ const Header: React.FC = () => {
                 About
               </a>
 
-              {user?.role ? (
+              {status === AuthStatus.CHECKING ? (
+                <div className="w-12 h-6" />
+              ) : user?.role ? (
                 <Link to={`/${user.role}/dashboard`}>
                   <User />
                 </Link>

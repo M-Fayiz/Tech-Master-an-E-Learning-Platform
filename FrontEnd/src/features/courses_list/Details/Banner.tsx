@@ -9,7 +9,7 @@ interface BannerProps {
 import { OrderService } from "@/service/order.service";
 import { useAuth } from "@/context/auth.context";
 import { toast } from "sonner";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Badge } from "@/components/ui/shadcn-io/ThemeBadge";
 import { StarRating } from "@/pages/course-page/Rating";
 import { Users2 } from "lucide-react";
@@ -43,9 +43,12 @@ const Banner: React.FC<BannerProps> = ({
   category,
 }) => {
   const { user } = useAuth();
-
+  const navigate = useNavigate()
   const handlePaymentPage = async () => {
     try {
+      if(!user){
+        navigate('/auth/login')
+      }
       const result = await OrderService.createPayment(courseId, user!.id);
 
       if (result) {

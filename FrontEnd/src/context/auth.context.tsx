@@ -10,6 +10,7 @@ import {
   AuthStatus,
   type AuthStatusType,
   type IDecodedUserType,
+  type ILogin,
   type ISignUp,
 } from "../types/auth.types";
 import { AuthService } from "../service/auth.service";
@@ -20,7 +21,7 @@ interface User extends IDecodedUserType {}
 interface AuthContextProps {
   user: User | null;
   status: AuthStatusType;
-  login: (data: ISignUp) => Promise<User>;
+  login: (data: ILogin) => Promise<User>;
   signup: (
     data: ISignUp,
   ) => Promise<{ status: number; message: string; email: string }>;
@@ -50,35 +51,51 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [status, setStatus] = useState<AuthStatusType>(AuthStatus.CHECKING);
   const authRequestIdRef = useRef(0);
   const isMountedRef = useRef(true);
+  const pendingBootstrapRef = useRef<Promise<void> | null>(null);
 
   const bootstrapAuth = async () => {
+    if (pendingBootstrapRef.current) {
+      return pendingBootstrapRef.current;
+    }
+
     const requestId = ++authRequestIdRef.current;
 
-    try {
-      const user = await AuthService.restoreSession();
+    let bootstrapPromise: Promise<void> | null = null;
 
-      if (!isMountedRef.current || requestId !== authRequestIdRef.current) {
-        return;
-      }
+    bootstrapPromise = (async () => {
+      try {
+        const user = await AuthService.restoreSession();
 
-      setUser(user);
-      setStatus(AuthStatus.AUTHENTICATED);
-    } catch (error: any) {
-      if (!isMountedRef.current || requestId !== authRequestIdRef.current) {
-        return;
-      }
+        if (!isMountedRef.current || requestId !== authRequestIdRef.current) {
+          return;
+        }
 
-      if (error?.status === HttpStatusCode.UNAUTHORIZED) {
-        setUser(null);
-        setStatus(AuthStatus.GUEST);
-      } else if (error?.status === HttpStatusCode.LOCKED) {
-        setUser(null);
-        setStatus(AuthStatus.BLOCKED);
-      } else {
-        setUser(null);
-        setStatus(AuthStatus.GUEST);
+        setUser(user);
+        setStatus(AuthStatus.AUTHENTICATED);
+      } catch (error: any) {
+        if (!isMountedRef.current || requestId !== authRequestIdRef.current) {
+          return;
+        }
+
+        if (error?.status === HttpStatusCode.UNAUTHORIZED) {
+          setUser(null);
+          setStatus(AuthStatus.GUEST);
+        } else if (error?.status === HttpStatusCode.LOCKED) {
+          setUser(null);
+          setStatus(AuthStatus.BLOCKED);
+        } else {
+          setUser(null);
+          setStatus(AuthStatus.GUEST);
+        }
+      } finally {
+        if (pendingBootstrapRef.current === bootstrapPromise) {
+          pendingBootstrapRef.current = null;
+        }
       }
-    }
+    })();
+
+    pendingBootstrapRef.current = bootstrapPromise;
+    return bootstrapPromise;
   };
 
   useEffect(() => {
@@ -91,15 +108,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const handleForceLogout = () => {
+      AuthService.clearClientAuth();
       setUser(null);
       setStatus(AuthStatus.GUEST);
     };
 
+    const handleForceBlock = () => {
+      AuthService.clearClientAuth();
+      setUser(null);
+      setStatus(AuthStatus.BLOCKED);
+    };
+
     window.addEventListener("force-logout", handleForceLogout);
-    return () => window.removeEventListener("force-logout", handleForceLogout);
+    window.addEventListener("force-block", handleForceBlock);
+    return () => {
+      window.removeEventListener("force-logout", handleForceLogout);
+      window.removeEventListener("force-block", handleForceBlock);
+    };
   }, []);
 
-  const login = async (data: ISignUp) => {
+  const login = async (data: ILogin) => {
     authRequestIdRef.current += 1;
     setStatus(AuthStatus.CHECKING);
 
