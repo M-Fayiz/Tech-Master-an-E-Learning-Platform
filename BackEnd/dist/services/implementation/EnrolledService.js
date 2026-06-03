@@ -35,17 +35,7 @@ class EnrolledService {
         if (!enrolledData) {
             throw (0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.NOT_FOUND, error_message_const_1.HttpResponse.ITEM_NOT_FOUND);
         }
-        const populatedEnrolledCourse = await Promise.all(enrolledData.map(async (course) => {
-            const data = await this._courseRepository.findCourse(course.courseId);
-            if (!data)
-                return null;
-            const populatedCourse = (0, course_dtos_1.formCourseDto)(data);
-            return {
-                ...course,
-                courseId: populatedCourse,
-            };
-        }));
-        return populatedEnrolledCourse.map((course) => (0, enrolled_dto_1.enrolledListDTO)(course));
+        return enrolledData.map((enrollment) => (0, enrolled_dto_1.enrolledListDTO)(enrollment));
     }
     async getEnrolledCourseDetails(enrolledId) {
         const enrolled_Id = (0, objectId_1.parseObjectId)(enrolledId);

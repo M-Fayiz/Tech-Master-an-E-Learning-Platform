@@ -12,7 +12,18 @@ class EnrolledRepository extends baseRepository_1.BaseRepository {
         return await this.create(enrollData);
     }
     async getEnrolledCourses(learnerId) {
-        return await this.findAll({ learnerId: learnerId });
+        return await this.model
+            .find({ learnerId })
+            .populate({
+            path: "courseId",
+            populate: [
+                { path: "categoryId" },
+                { path: "subCategoryId" },
+                { path: "mentorId", select: "name email" },
+            ],
+        })
+            .lean()
+            .exec();
     }
     async getEnrolledCOurseDetails(enrolledId) {
         return await this.findById(enrolledId);

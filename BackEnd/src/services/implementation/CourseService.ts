@@ -126,7 +126,9 @@ export class CourseService implements ICourseService {
       throw createHttpError(HttpStatus.NOT_FOUND, HttpResponse.ITEM_NOT_FOUND);
     }
     const enrolledIds = new Set(
-      enrolledCourse?.map((c) => c.courseId.toString()),
+      enrolledCourse?.map((c) =>
+        String((c.courseId as { _id?: Types.ObjectId })._id ?? c.courseId),
+      ),
     );
     const mappedCourseList = courseList.map((course) =>
       courseListDTO(course as IPopulatedCourse, enrolledIds),
@@ -317,12 +319,12 @@ export class CourseService implements ICourseService {
     baseInfo: ICourses,
   ): Promise<ICourseDTO> {
     const id = parseObjectId(courseId);
-  
+
     if (!id) {
       throw createHttpError(HttpStatus.BAD_REQUEST, HttpResponse.INVALID_ID);
     }
     await this._courseRepository.updateBaseInfo(id, baseInfo);
-    const courseData =await this._courseRepository.findCourse(id);
+    const courseData = await this._courseRepository.findCourse(id);
 
     return courseDTO(courseData as unknown as IPopulatedCourse);
   }

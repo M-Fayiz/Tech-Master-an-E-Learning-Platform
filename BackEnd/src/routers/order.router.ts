@@ -32,7 +32,7 @@ orderRouter.get(
 orderRouter.get(
   "/payment/transaction",
   verifyUser,
-  authorizedRole(IRole.Admin,IRole.Mentor),
+  authorizedRole(IRole.Admin, IRole.Mentor),
   orderController.getTransactionHistory,
 );
 
@@ -42,6 +42,5 @@ orderRouter.post(
   authorizedRole(IRole.Learner),
   orderController.create_intent,
 );
-
 
 export default orderRouter;

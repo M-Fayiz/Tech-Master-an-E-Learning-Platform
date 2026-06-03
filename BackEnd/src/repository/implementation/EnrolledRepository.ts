@@ -35,7 +35,18 @@ export class EnrolledRepository
   async getEnrolledCourses(
     learnerId: Types.ObjectId,
   ): Promise<IEnrolledModel[] | null> {
-    return await this.findAll({ learnerId: learnerId });
+    return await this.model
+      .find({ learnerId })
+      .populate({
+        path: "courseId",
+        populate: [
+          { path: "categoryId" },
+          { path: "subCategoryId" },
+          { path: "mentorId", select: "name email" },
+        ],
+      })
+      .lean<IEnrolledModel[]>()
+      .exec();
   }
   async getEnrolledCOurseDetails(
     enrolledId: Types.ObjectId,

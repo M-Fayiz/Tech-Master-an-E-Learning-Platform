@@ -19,15 +19,11 @@ const chatRepository = new ChatRepository();
 const messageRepository = new MessageRepository();
 const chatService = new ChatService(chatRepository, messageRepository);
 
-
 function toMessageType(type?: string): MessageType {
   if (!type) return MessageType.TEXT;
 
   if (!Object.values(MessageType).includes(type as MessageType)) {
-    throw createHttpError(
-      HttpStatus.BAD_REQUEST,
-      "Invalid message type"
-    );
+    throw createHttpError(HttpStatus.BAD_REQUEST, "Invalid message type");
   }
 
   return type as MessageType;
@@ -39,7 +35,6 @@ export const registerChatHandler = (
 ) => {
   const userId = socket.data.userId;
 
- 
   socket.on(ChatEvents.JOIN, async (payload) => {
     const { roomId } = payload || {};
 
@@ -72,7 +67,6 @@ export const registerChatHandler = (
     socket.to(`chat:${roomId}`).emit(ChatEvents.NOTIFICATION, { roomId });
   });
 
-
   socket.on(ChatEvents.SEND, async (payload, ack) => {
     try {
       const { roomId, content, mediaUrl } = payload;
@@ -92,15 +86,10 @@ export const registerChatHandler = (
       const senderId = parseObjectId(userId);
 
       if (!room_id || !senderId) {
-        throw createHttpError(
-          HttpStatus.BAD_REQUEST,
-          HttpResponse.INVALID_ID
-        );
+        throw createHttpError(HttpStatus.BAD_REQUEST, HttpResponse.INVALID_ID);
       }
 
-      const otherUsers = chat.users
-        .map(String)
-        .filter((id) => id !== userId);
+      const otherUsers = chat.users.map(String).filter((id) => id !== userId);
 
       if (otherUsers.length !== 1) {
         throw new Error("Invalid one-to-one chat state");
@@ -112,12 +101,11 @@ export const registerChatHandler = (
         chatId: room_id,
         sender: senderId,
         content,
-        type, 
+        type,
         status: MessageStatus.SENT,
         mediaUrl,
       });
 
-      
       let previewMessage = "Message";
       if (type === MessageType.TEXT) previewMessage = content!;
       else if (type === MessageType.IMAGE) previewMessage = "📷 Image";
@@ -153,7 +141,6 @@ export const registerChatHandler = (
     }
   });
 
-
   socket.on(ChatEvents.DELIVERED, async ({ roomId, messageId }) => {
     const chat = await chatService.findChat(roomId);
     if (!chat || !chat.users.map(String).includes(userId)) return;
@@ -168,16 +155,12 @@ export const registerChatHandler = (
     });
   });
 
-
   socket.on(ChatEvents.READ, async ({ roomId, messageIds }) => {
     const readerId = userId;
 
     await chatService.readMessages(messageIds);
 
-    const updatedChat = await chatService.resetUnreadMsg(
-      roomId,
-      readerId,
-    );
+    const updatedChat = await chatService.resetUnreadMsg(roomId, readerId);
 
     io.to(`user:${readerId}`).emit(ChatEvents.UPDATE, updatedChat);
   });

@@ -15,6 +15,6 @@ const enrolledRepository = new EnrolledRepository_1.EnrolledRepository();
 const courseRepository = new CourseRepository_1.CourseRepository();
 const chatbotService = new ChatbotService_1.ChatbotService(chatbotRepository, enrolledRepository, courseRepository);
 const chatbotController = new ChatBotController_1.ChatbotController(chatbotService);
-chatBotRouter.post('/', chatbotController.chat);
-chatBotRouter.get('/learner/:learnerId/course/:courseId', chatbotController.fetchChat);
+chatBotRouter.post("/", chatbotController.chat);
+chatBotRouter.get("/learner/:learnerId/course/:courseId", chatbotController.fetchChat);
 exports.default = chatBotRouter;

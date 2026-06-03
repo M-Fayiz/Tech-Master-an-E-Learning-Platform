@@ -14,7 +14,7 @@ function adminDashboardDTO(mentor, learners, courses, revenue, topCourse, topCat
         },
         mentorStatus: {
             approved: mentorStatus.approved ?? 0,
-            rejected: mentorStatus.rejected ?? 0
-        }
+            rejected: mentorStatus.rejected ?? 0,
+        },
     };
 }

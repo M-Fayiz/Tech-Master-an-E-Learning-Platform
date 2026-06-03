@@ -192,7 +192,10 @@ class OrderService {
         if (!trasnsactionData) {
             throw (0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.NOT_FOUND, error_message_const_1.HttpResponse.ITEM_NOT_FOUND);
         }
-        return { transactionHistory: trasnsactionData.map(data => (0, transaction_dto_1.transactionHistoryDto)(data, role)), totalPage: Math.floor(totalPage / limit) };
+        return {
+            transactionHistory: trasnsactionData.map((data) => (0, transaction_dto_1.transactionHistoryDto)(data, role)),
+            totalPage: Math.floor(totalPage / limit),
+        };
     }
 }
 exports.OrderService = OrderService;

@@ -3,7 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.systemInstruction = void 0;
 const chatBot_type_1 = require("../types/chatBot.type");
 const systemInstruction = (course) => {
-    const lecctureContent = course.sessions?.map(session => session.lectures.map(lecture => lecture.title)).join(',');
+    const lecctureContent = course.sessions
+        ?.map((session) => session.lectures.map((lecture) => lecture.title))
+        .join(",");
     return {
         role: chatBot_type_1.Sender.USER,
         parts: [

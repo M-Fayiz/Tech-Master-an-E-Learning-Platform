@@ -19,7 +19,10 @@ class ChatbotService {
     async createChat(learnerId, courseId, message) {
         const course_Id = new mongoose_1.Types.ObjectId(courseId);
         const learner_Id = new mongoose_1.Types.ObjectId(learnerId);
-        const isEnrolled = await this._enrolledRepository.findEnrlloedCourse({ courseId: course_Id, learnerId: learner_Id });
+        const isEnrolled = await this._enrolledRepository.findEnrlloedCourse({
+            courseId: course_Id,
+            learnerId: learner_Id,
+        });
         if (!isEnrolled) {
             throw (0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.NOT_FOUND, error_message_const_1.HttpResponse.NOT_ENROLLED);
         }
@@ -30,28 +33,34 @@ class ChatbotService {
         }
         let chat = await this._chatbotRepository.findChat({ learnerId, courseId });
         if (!chat) {
-            chat = await this._chatbotRepository.createChat({ learnerId: learner_Id, courseId: course_Id, messages: [] });
+            chat = await this._chatbotRepository.createChat({
+                learnerId: learner_Id,
+                courseId: course_Id,
+                messages: [],
+            });
         }
         chat.messages.push({
             role: chatBot_type_1.Sender.USER,
             content: message,
-            createdAt: new Date()
+            createdAt: new Date(),
         });
         const systemInstructionData = (0, systemInstruction_template_1.systemInstruction)(course);
         const contents = [
             systemInstructionData,
-            ...chat.messages.map(msg => ({
+            ...chat.messages.map((msg) => ({
                 role: msg.role,
                 parts: [{ text: msg.content }],
-            }))
+            })),
         ];
         const aiReply = await (0, gemini_util_1.askGemini)(contents);
         chat.messages.push({
             role: chatBot_type_1.Sender.AI,
             content: aiReply,
-            createdAt: new Date()
+            createdAt: new Date(),
         });
-        const updatedChat = await this._chatbotRepository.updateChatbot(chat._id, { $set: { messages: chat.messages } });
+        const updatedChat = await this._chatbotRepository.updateChatbot(chat._id, {
+            $set: { messages: chat.messages },
+        });
         if (!updatedChat) {
             throw (0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.INTERNAL_SERVER_ERROR, error_message_const_1.HttpResponse.SERVER_ERROR);
         }
@@ -63,7 +72,10 @@ class ChatbotService {
         if (!learner_Id || !course_Id) {
             throw (0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.BAD_REQUEST, error_message_const_1.HttpResponse.INVALID_ID);
         }
-        const getChtatbotChats = await this._chatbotRepository.findChat({ learnerId, courseId });
+        const getChtatbotChats = await this._chatbotRepository.findChat({
+            learnerId,
+            courseId,
+        });
         if (!getChtatbotChats) {
             throw (0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.NOT_FOUND, error_message_const_1.HttpResponse.ITEM_NOT_FOUND);
         }

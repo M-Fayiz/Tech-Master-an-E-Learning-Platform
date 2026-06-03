@@ -1,6 +1,10 @@
 import { Types } from "mongoose";
 import { IEnrolledModel } from "../models/enrolled.model";
-import { IFormCourseDTO } from "../types/dtos.type/course.dtos.type";
+import { formCourseDto } from "./course.dtos";
+import {
+  IFormCourseDTO,
+  IPopulatedCourse,
+} from "../types/dtos.type/course.dtos.type";
 import {
   IEnrolledCoursedetailsDTO,
   IEnrolledListDto,
@@ -12,7 +16,7 @@ export const enrolledListDTO = (
   return {
     _id: enrolledData._id,
     completedPercentage: enrolledData.progress?.completionPercentage ?? 0,
-    course: enrolledData.courseId as IFormCourseDTO,
+    course: formCourseDto(enrolledData.courseId as unknown as IPopulatedCourse),
   };
 };
 

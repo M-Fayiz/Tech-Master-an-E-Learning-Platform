@@ -6,7 +6,6 @@ import { HttpResponse } from "../../const/error-message.const";
 import { IEnrolledService } from "../../services/interface/IEnrolledService";
 import { FilterByDate } from "../../const/filter.const";
 
-
 export class EnrolledController implements IEnrolledController {
   constructor(private _enrolledService: IEnrolledService) {}
   getEnrolledCourse = async (
@@ -15,11 +14,11 @@ export class EnrolledController implements IEnrolledController {
     next: NextFunction,
   ): Promise<void> => {
     try {
-    
-       const user=req.user as  {_id:string}
-      const enrolledCourseData =
-        await this._enrolledService.getEnrolledCourses(user._id);
-   
+      const user = req.user as { _id: string };
+      const enrolledCourseData = await this._enrolledService.getEnrolledCourses(
+        user._id,
+      );
+      console.log('enrolled data :',enrolledCourseData)
       res
         .status(HttpStatus.OK)
         .json(successResponse(HttpResponse.OK, { enrolledCourseData }));
@@ -93,13 +92,12 @@ export class EnrolledController implements IEnrolledController {
   ): Promise<void> => {
     try {
       const { courseId } = req.params;
-     
-     
-       const user=req.user as  {_id:string}
+
+      const user = req.user as { _id: string };
       const dashboardData =
         await this._enrolledService.getCourseEnrolledDashboardData(
           courseId,
-          user._id ,
+          user._id,
         );
 
       res
@@ -139,9 +137,8 @@ export class EnrolledController implements IEnrolledController {
     next: NextFunction,
   ): Promise<void> => {
     try {
-      
       const { filter } = req.query;
-       const user=req.user as  {_id:string}
+      const user = req.user as { _id: string };
       const dashboardData = await this._enrolledService.getMentorDashboardData(
         user._id,
         filter as FilterByDate,
@@ -201,8 +198,7 @@ export class EnrolledController implements IEnrolledController {
     next: NextFunction,
   ): Promise<void> => {
     try {
-     
-       const user=req.user as  {_id:string}
+      const user = req.user as { _id: string };
       const dashboardData =
         await this._enrolledService.learnerDashboardCardData(user._id);
       res.status(HttpStatus.OK).json(

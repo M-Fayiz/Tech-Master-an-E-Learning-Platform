@@ -188,22 +188,26 @@ export class UserRepository
       $set: { learningStreak: updatedData },
     });
   }
-  async  getMentorStatus(filter: FilterQuery<IUserModel>): Promise<Mentorstatus[]> {
+  async getMentorStatus(
+    filter: FilterQuery<IUserModel>,
+  ): Promise<Mentorstatus[]> {
     return await this.aggregate<Mentorstatus>([
-      { $match:filter },
-      {$group:{
-        _id:null,
-        approved:{
-          $sum:{
-            $cond:[{$eq:["$ApprovalStatus",'approved']},1,0]
-          }
+      { $match: filter },
+      {
+        $group: {
+          _id: null,
+          approved: {
+            $sum: {
+              $cond: [{ $eq: ["$ApprovalStatus", "approved"] }, 1, 0],
+            },
+          },
+          rejected: {
+            $sum: {
+              $cond: [{ $eq: ["$ApprovalStatus", "rejected"] }, 1, 0],
+            },
+          },
         },
-        rejected:{
-          $sum:{
-            $cond:[{$eq:["$ApprovalStatus",'rejected']},1,0]
-          }
-        },
-      }}
-    ])
+      },
+    ]);
   }
 }

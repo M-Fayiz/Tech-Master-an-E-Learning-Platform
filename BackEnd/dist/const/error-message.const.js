@@ -42,5 +42,5 @@ exports.HttpResponse = {
     CAN_NOT_CANCEL: "You can not Cancel the Booked Slot",
     TIME_EXCEEDED: "Sorry Cancellation not allowed within 12 hours",
     TRANSACTION_NOT_FOUND: "Transaction Not Found",
-    NOT_ENROLLED: 'Not enrolled'
+    NOT_ENROLLED: "Not enrolled",
 };

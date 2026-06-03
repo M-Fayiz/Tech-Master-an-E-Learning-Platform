@@ -10,5 +10,8 @@ export interface IOrderService {
     sessionId: string,
   ): Promise<Stripe.Response<Stripe.Checkout.Session>>;
   handleCoursePurchase(session: Stripe.Checkout.Session): Promise<void>;
-  getTransactionHistory(role: IRole,page:number): Promise<{transactionHistory:ITransactionDTO[],totalPage:number}> ;
+  getTransactionHistory(
+    role: IRole,
+    page: number,
+  ): Promise<{ transactionHistory: ITransactionDTO[]; totalPage: number }>;
 }

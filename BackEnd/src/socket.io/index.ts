@@ -20,7 +20,9 @@ const getCookieValue = (cookieHeader: string | undefined, key: string) => {
 
   const cookies = cookieHeader.split(";").map((cookie) => cookie.trim());
   const target = cookies.find((cookie) => cookie.startsWith(`${key}=`));
-  return target ? decodeURIComponent(target.split("=").slice(1).join("=")) : null;
+  return target
+    ? decodeURIComponent(target.split("=").slice(1).join("="))
+    : null;
 };
 
 export const intitializeSocket = (server: HttpServer) => {

@@ -1,7 +1,7 @@
 import { env } from "./env.config";
 
 const allowedOrigins = [env.CLIENT_URL_2, env.CLIENT_ORGIN];
-console.log('alowsed origin :',allowedOrigins)
+console.log("alowsed origin :", allowedOrigins);
 export const corsSetUp = {
   origin: function (
     origin: string | undefined,

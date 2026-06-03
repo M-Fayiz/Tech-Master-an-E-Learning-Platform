@@ -19,7 +19,9 @@ const getCookieValue = (cookieHeader, key) => {
         return null;
     const cookies = cookieHeader.split(";").map((cookie) => cookie.trim());
     const target = cookies.find((cookie) => cookie.startsWith(`${key}=`));
-    return target ? decodeURIComponent(target.split("=").slice(1).join("=")) : null;
+    return target
+        ? decodeURIComponent(target.split("=").slice(1).join("="))
+        : null;
 };
 const intitializeSocket = (server) => {
     io = new socket_io_1.Server(server, {

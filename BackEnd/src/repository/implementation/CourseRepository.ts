@@ -70,28 +70,27 @@ export class CourseRepository
       "subCategoryId",
     ]);
   }
- async addSession(
-  courseId: Types.ObjectId,
-  session: ISession,
-): Promise<ICourses | null> {
-  return this.pushToArray(
-    { _id: courseId },
-    "sessions",
-    session,
-  );
-}
+  async addSession(
+    courseId: Types.ObjectId,
+    session: ISession,
+  ): Promise<ICourses | null> {
+    return this.pushToArray({ _id: courseId }, "sessions", session);
+  }
 
- async addLecture(
-  courseId: Types.ObjectId,
-  sessionId: Types.ObjectId,
-  lecture: ILecture,
-): Promise<ICourses | null> {
-  return this.model.findOneAndUpdate(
-    { _id: courseId, "sessions._id": sessionId },
-    { $push: { "sessions.$.lectures": lecture } },
-    { new: true }
-  ).lean<ICourses>().exec();
-}
+  async addLecture(
+    courseId: Types.ObjectId,
+    sessionId: Types.ObjectId,
+    lecture: ILecture,
+  ): Promise<ICourses | null> {
+    return this.model
+      .findOneAndUpdate(
+        { _id: courseId, "sessions._id": sessionId },
+        { $push: { "sessions.$.lectures": lecture } },
+        { new: true },
+      )
+      .lean<ICourses>()
+      .exec();
+  }
 
   async findSession(
     courseId: Types.ObjectId,
@@ -197,33 +196,33 @@ export class CourseRepository
     return await this.findOne({ _id: courseId });
   }
   async removeSession(
-  courseId: Types.ObjectId,
-  sessionId: Types.ObjectId,
-): Promise<ICourses | null> {
-  return this.pullFromArray(
-    { _id: courseId },
-    "sessions",
-    { _id: sessionId },
-  );
-}
+    courseId: Types.ObjectId,
+    sessionId: Types.ObjectId,
+  ): Promise<ICourses | null> {
+    return this.pullFromArray({ _id: courseId }, "sessions", {
+      _id: sessionId,
+    });
+  }
 
   async removeLecture(
-  courseId: Types.ObjectId,
-  sessionId: Types.ObjectId,
-  lectureId: Types.ObjectId,
-): Promise<ICourses | null> {
-  return this.model.findOneAndUpdate(
-    {
-      _id: courseId,
-      "sessions._id": sessionId,
-    },
-    {
-      $pull: {
-        "sessions.$.lectures": { _id: lectureId },
-      },
-    },
-    { new: true },
-  ).lean<ICourses>().exec();
-}
-
+    courseId: Types.ObjectId,
+    sessionId: Types.ObjectId,
+    lectureId: Types.ObjectId,
+  ): Promise<ICourses | null> {
+    return this.model
+      .findOneAndUpdate(
+        {
+          _id: courseId,
+          "sessions._id": sessionId,
+        },
+        {
+          $pull: {
+            "sessions.$.lectures": { _id: lectureId },
+          },
+        },
+        { new: true },
+      )
+      .lean<ICourses>()
+      .exec();
+  }
 }

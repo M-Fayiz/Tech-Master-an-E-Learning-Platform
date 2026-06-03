@@ -30,7 +30,9 @@ export class AuthController implements IAuthController {
   async signUp(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const email = await this._authService.signUp(req.body);
-      res.status(HttpStatus.OK).json(successResponse(HttpResponse.OK, { email }));
+      res
+        .status(HttpStatus.OK)
+        .json(successResponse(HttpResponse.OK, { email }));
     } catch (error) {
       next(error);
     }
@@ -66,7 +68,9 @@ export class AuthController implements IAuthController {
       }
 
       const user = await this._authService.authMe(accessToken);
-      res.status(HttpStatus.OK).json(successResponse(HttpResponse.OK, { user }));
+      res
+        .status(HttpStatus.OK)
+        .json(successResponse(HttpResponse.OK, { user }));
     } catch (error) {
       next(error);
     }
@@ -139,7 +143,9 @@ export class AuthController implements IAuthController {
   ): Promise<void> {
     try {
       const email = await this._authService.forgotPassword(req.body.email);
-      res.status(HttpStatus.OK).json(successResponse(HttpResponse.OK, { email }));
+      res
+        .status(HttpStatus.OK)
+        .json(successResponse(HttpResponse.OK, { email }));
     } catch (error) {
       next(error);
     }
@@ -176,7 +182,9 @@ export class AuthController implements IAuthController {
         return;
       }
 
-      const data = await this._authService.generateToken(req.user as IUserModel);
+      const data = await this._authService.generateToken(
+        req.user as IUserModel,
+      );
 
       setAccessToken(res, data.accessToken);
       setRefreshToken(res, data.refreshToken);

@@ -1,11 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.enrolledCourseDetailDTO = exports.enrolledListDTO = void 0;
+const course_dtos_1 = require("./course.dtos");
 const enrolledListDTO = (enrolledData) => {
     return {
         _id: enrolledData._id,
         completedPercentage: enrolledData.progress?.completionPercentage ?? 0,
-        course: enrolledData.courseId,
+        course: (0, course_dtos_1.formCourseDto)(enrolledData.courseId),
     };
 };
 exports.enrolledListDTO = enrolledListDTO;

@@ -309,10 +309,10 @@ export class CourseController implements ICourseController {
     next: NextFunction,
   ): Promise<void> => {
     try {
-   
-       const user=req.user as  {_id:string}
-      const courseList =
-        await this._courseService.fetchCourseListForSlot(user._id);
+      const user = req.user as { _id: string };
+      const courseList = await this._courseService.fetchCourseListForSlot(
+        user._id,
+      );
       res
         .status(HttpStatus.OK)
         .json(successResponse(HttpResponse.OK, { courseList }));

@@ -41,7 +41,6 @@ const AuthSessionSchema = new mongoose_1.default.Schema({
         type: Date,
         default: null,
     },
-    // Links rotated refresh tokens so reuse can be detected later.
     replacedBy: {
         type: mongoose_1.default.Schema.Types.ObjectId,
         ref: modelName_const_1.DbModelName.AUTH_SESSION,
