@@ -1,24 +1,36 @@
 import { IUser, IAuth } from "../../types/user.types";
-import { JwtPayload } from "jsonwebtoken";
 import { IUserDTO } from "../../types/dtos.type/user.dto.types";
+
+export interface IAuthClientContext {
+  userAgent?: string;
+  ip?: string;
+}
 
 export interface IAuthService {
   signUp(user: IUser): Promise<string>;
   verifyEmail(
     data: IAuth,
-  ): Promise<{ accessToken: string; refreshToken: string }>;
+    clientContext?: IAuthClientContext,
+   ): Promise<{ accessToken: string; refreshToken: string; user: IUserDTO }>;
   authMe(token: string): Promise<IUserDTO>;
   refreshAccessToken(
     token: string,
-  ): Promise<{ newAccessToken: string; payload: JwtPayload }>;
+    clientContext?: IAuthClientContext,
+  ): Promise<{
+    newAccessToken: string;
+    newRefreshToken: string;
+    user: IUserDTO;
+  }>;
   login(
     email: string,
     password: string,
+    clientContext?: IAuthClientContext,
   ): Promise<{
     accessToken: string;
     refreshToken: string;
     MappedUser: IUserDTO;
   }>;
+  logout(refreshToken?: string): Promise<void>;
   forgotPassword(email: string): Promise<string>;
   resetPassword(
     email: string,
@@ -28,6 +40,6 @@ export interface IAuthService {
   generateToken(user: IUser): Promise<{
     accessToken: string;
     refreshToken: string;
-    payload: JwtPayload;
+    user: IUserDTO;
   }>;
 }

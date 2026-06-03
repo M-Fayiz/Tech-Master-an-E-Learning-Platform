@@ -12,8 +12,8 @@ const error_message_const_1 = require("../const/error-message.const");
 const socketEvents_const_1 = require("../const/socketEvents.const");
 const chat_socket_1 = require("./chat.socket");
 const video_socket_1 = require("./video.socket");
-const auth_const_1 = require("../const/auth.const");
 let io;
+
 const getCookieValue = (cookieHeader, key) => {
     if (!cookieHeader)
         return null;
@@ -23,6 +23,7 @@ const getCookieValue = (cookieHeader, key) => {
         ? decodeURIComponent(target.split("=").slice(1).join("="))
         : null;
 };
+
 const intitializeSocket = (server) => {
     io = new socket_io_1.Server(server, {
         cors: {
@@ -32,7 +33,7 @@ const intitializeSocket = (server) => {
         },
     });
     io.use((socket, next) => {
-        const token = getCookieValue(socket.handshake.headers.cookie, auth_const_1.AUTH_TOKEN.ACCESS_TOKEN) ?? socket.handshake.auth?.token;
+        const token = socket.handshake.auth?.token;
         if (!token)
             return next(new Error(error_message_const_1.HttpResponse.UNAUTHORIZED));
         try {

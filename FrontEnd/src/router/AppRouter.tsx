@@ -6,6 +6,7 @@ import Landing from "@/pages/Landing page/Landing";
 import LoginPage from "@/pages/Auth Page/LoginPage";
 import SignupPage from "../pages/Auth Page/SignupPage";
 import VerifyEmail from "@/components/auth-components/VerifyEmail";
+import GoogleAuthCallback from "@/components/auth-components/GoogleAuthCallback";
 import ForgotPassword from "../components/auth-components/ForgotPassword";
 import ResetPassword from "../components/auth-components/ResetPassword";
 import NotFound from "../pages/not-found/Not-Found";
@@ -40,6 +41,7 @@ import MentorBookedSlots from "@/pages/Slots/MentorsBooked";
 import CertificatesList from "@/pages/certificate page/ListCertificatePage";
 import LearnerDashboard from "@/pages/learner page/Learner-Dashboard";
 import Unauthorized from "@/pages/not-found/UnAuthorized";
+import Blocked from "@/pages/not-found/Blocked";
 import RootLayout from "@/components/auth-components/RouterLayout";
 import TransactionPage from "@/pages/transaction/transactionHistory";
 
@@ -66,6 +68,7 @@ export const router = createBrowserRouter([
       { path: "signup", element: <SignupPage /> },
       { path: "forgot-password", element: <ForgotPassword /> },
       { path: "verify-email", element: <VerifyEmail /> },
+      { path: "google/callback", element: <GoogleAuthCallback /> },
       { path: "reset-password", element: <ResetPassword /> },
     ],
   },
@@ -194,6 +197,10 @@ export const router = createBrowserRouter([
       {
         path: "unauthorized",
         element: <Unauthorized />,
+      },
+      {
+        path: "blocked",
+        element: <Blocked />,
       },
       {
         path: "*",

@@ -12,8 +12,10 @@ const AuthController_1 = require("../controllers/implementation/AuthController")
 const zod_1 = require("../utils/zod");
 const passport_util_1 = __importDefault(require("../utils/passport.util"));
 const env_config_1 = require("../config/env.config");
+const SessionRepository_1 = require("../repository/implementation/SessionRepository");
 const userRepository = new UserRepository_1.UserRepository();
-const authService = new AuthService_1.AuthService(userRepository);
+const sessionRepository = new SessionRepository_1.SessionRepository();
+const authService = new AuthService_1.AuthService(userRepository, sessionRepository);
 const authController = new AuthController_1.AuthController(authService);
 authRouter.post("/signup", (0, validate_1.Validate)(zod_1.registerSchema), authController.signUp.bind(authController));
 authRouter.post("/verify-email", authController.verifyEmail.bind(authController));

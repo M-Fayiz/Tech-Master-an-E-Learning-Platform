@@ -7,7 +7,6 @@ import { HttpResponse } from "../const/error-message.const";
 import { SocketEvents } from "../const/socketEvents.const";
 import { registerChatHandler } from "./chat.socket";
 import { registerVideoHandlers } from "./video.socket";
-import { AUTH_TOKEN } from "../const/auth.const";
 
 interface CustomSocket extends Socket {
   data: { userId: string };
@@ -25,6 +24,7 @@ const getCookieValue = (cookieHeader: string | undefined, key: string) => {
     : null;
 };
 
+
 export const intitializeSocket = (server: HttpServer) => {
   io = new Server(server, {
     cors: {
@@ -35,11 +35,7 @@ export const intitializeSocket = (server: HttpServer) => {
   });
 
   io.use((socket: CustomSocket, next) => {
-    const token =
-      getCookieValue(
-        socket.handshake.headers.cookie,
-        AUTH_TOKEN.ACCESS_TOKEN,
-      ) ?? socket.handshake.auth?.token;
+    const token = socket.handshake.auth?.token;
 
     if (!token) return next(new Error(HttpResponse.UNAUTHORIZED));
     try {

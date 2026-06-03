@@ -13,15 +13,47 @@ const http_status_const_1 = require("../../const/http-status.const");
 const error_message_const_1 = require("../../const/error-message.const");
 const http_error_1 = require("../../utils/http-error");
 const jwt_token_util_1 = require("../../utils/jwt-token.util");
-const jwt_token_util_2 = require("../../utils/jwt-token.util");
 const crypto_util_1 = require("../../utils/crypto.util");
 const redisKey_const_1 = require("../../const/redisKey.const");
 const user_dto_1 = require("../../dtos/user.dto");
 const payload_dto_1 = require("../../dtos/payload.dto");
 const logger_config_1 = __importDefault(require("../../config/logger.config"));
+const env_config_1 = require("../../config/env.config");
+const duration_util_1 = require("../../utils/duration.util");
 class AuthService {
-    constructor(_userRepo) {
+    constructor(_userRepo, _sessionRepo) {
         this._userRepo = _userRepo;
+        this._sessionRepo = _sessionRepo;
+        this.refreshSessionMaxAge = (0, duration_util_1.parseDurationToMs)(env_config_1.env.REFRESH_TOKEN_MAX_AGE, 7 * 24 * 60 * 60 * 1000);
+    }
+    ensureUserCanAuthenticate(user) {
+        if (!user.isActive) {
+            throw (0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.LOCKED, error_message_const_1.HttpResponse.USER_BLOCKED);
+        }
+        if (!user.isVerified) {
+            throw (0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.FORBIDDEN, error_message_const_1.HttpResponse.EMAIL_NOT_VERIFIED);
+        }
+    }
+    buildAccessToken(user) {
+        return (0, jwt_token_util_1.generateAccessToken)((0, payload_dto_1.payloadDTO)(user));
+    }
+    async createSessionTokens(user, clientContext) {
+        const rawRefreshToken = (0, crypto_util_1.generateSecureToken)();
+        const session = await this._sessionRepo.createSession({
+            userId: user._id,
+            tokenHash: (0, crypto_util_1.hashSecureToken)(rawRefreshToken),
+            userAgent: clientContext?.userAgent,
+            ip: clientContext?.ip,
+            lastUsedAt: new Date(),
+            expiresAt: new Date(Date.now() + this.refreshSessionMaxAge),
+        });
+        const accessToken = this.buildAccessToken(user);
+        return {
+            accessToken,
+            refreshToken: rawRefreshToken,
+            session,
+            mappedUser: (0, user_dto_1.userDTO)(user),
+        };
     }
     async signUp(user) {
         const isUserExist = await this._userRepo.findUserByEmail(user.email);
@@ -38,7 +70,7 @@ class AuthService {
         }
         return user.email;
     }
-    async verifyEmail(data) {
+    async verifyEmail(data, clientContext) {
         const key = `${redisKey_const_1.redisPrefix.VERIFY_EMAIL}:${data.token}`;
         const result = await redis_config_1.default.get(key);
         if (!result) {
@@ -66,11 +98,15 @@ class AuthService {
         if (!newUser) {
             throw (0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.CONFLICT, error_message_const_1.HttpResponse.USER_CREATION_FAILED);
         }
-        const payload = (0, payload_dto_1.payloadDTO)(newUser);
-        return (0, jwt_token_util_1.generateTokens)(payload);
+        const sessionTokens = await this.createSessionTokens(newUser, clientContext);
+        return {
+            accessToken: sessionTokens.accessToken,
+            refreshToken: sessionTokens.refreshToken,
+            user: sessionTokens.mappedUser,
+        };
     }
     async authMe(token) {
-        const decode = (0, jwt_token_util_2.verifyAccesToken)(token);
+        const decode = (0, jwt_token_util_1.verifyAccesToken)(token);
         if (!decode) {
             throw (0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.UNAUTHORIZED, error_message_const_1.HttpResponse.ACCESS_TOKEN_EXPIRED);
         }
@@ -78,44 +114,64 @@ class AuthService {
         if (!user) {
             throw (0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.NOT_FOUND, error_message_const_1.HttpResponse.USER_NOT_FOUND);
         }
-        if (!user.isActive) {
-            throw (0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.LOCKED, error_message_const_1.HttpResponse.USER_BLOCKED);
-        }
+        this.ensureUserCanAuthenticate(user);
         return (0, user_dto_1.userDTO)(user);
     }
-    async refreshAccessToken(token) {
+    async refreshAccessToken(token, clientContext) {
         if (!token) {
             throw (0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.NOT_FOUND, error_message_const_1.HttpResponse.USER_NOT_FOUND);
         }
-        const decode = (0, jwt_token_util_2.verifyRefreshToken)(token);
-        if (!decode) {
-            logger_config_1.default.warn("refresh expired");
+        const currentSession = await this._sessionRepo.findSessionByTokenHash((0, crypto_util_1.hashSecureToken)(token));
+        if (!currentSession) {
+            logger_config_1.default.warn("refresh session missing or expired");
             throw (0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.UNAUTHORIZED, error_message_const_1.HttpResponse.REFRESH_TOKEN_EXPIRED);
         }
-        const user = await this._userRepo.findUserByEmail(decode.email);
-        if (!user?.isActive) {
-            throw (0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.LOCKED, error_message_const_1.HttpResponse.USER_BLOCKED);
+        await this._sessionRepo.touchSession(currentSession._id);
+        const user = await this._userRepo.findUserById(currentSession.userId);
+        if (!user) {
+            await this._sessionRepo.revokeSession(currentSession._id);
+            throw (0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.NOT_FOUND, error_message_const_1.HttpResponse.USER_NOT_FOUND);
         }
-        const payload = (0, payload_dto_1.payloadDTO)(user);
-        const { accessToken } = (0, jwt_token_util_1.generateTokens)(payload);
-        const newAccessToken = accessToken;
-        return { newAccessToken, payload };
+        this.ensureUserCanAuthenticate(user);
+        const nextSession = await this.createSessionTokens(user, clientContext);
+        await this._sessionRepo.revokeSession(currentSession._id, nextSession.session._id);
+        return {
+            newAccessToken: nextSession.accessToken,
+            newRefreshToken: nextSession.refreshToken,
+            user: nextSession.mappedUser,
+        };
     }
-    async login(email, password) {
+    async login(email, password, clientContext) {
+        console.log('email:', email);
         const user = await this._userRepo.findUserByEmail(email);
+        console.log('user:', user);
         if (!user) {
             throw (0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.NOT_FOUND, error_message_const_1.HttpResponse.USER_NOT_FOUND);
         }
-        if (!user.isActive) {
-            throw (0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.FORBIDDEN, error_message_const_1.HttpResponse.USER_BLOCKED);
+        this.ensureUserCanAuthenticate(user);
+        if (!user.password) {
+            throw (0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.BAD_REQUEST, error_message_const_1.HttpResponse.INVALID_CREDNTIALS);
         }
         const isMatch = await (0, bcrypt_util_1.comparePassword)(password, user.password);
         if (!isMatch) {
             throw (0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.BAD_REQUEST, error_message_const_1.HttpResponse.INVALID_CREDNTIALS);
         }
-        const MappedUser = (0, user_dto_1.userDTO)(user);
-        const { accessToken, refreshToken } = (0, jwt_token_util_1.generateTokens)((0, payload_dto_1.payloadDTO)(user));
-        return { accessToken, refreshToken, MappedUser };
+        const sessionTokens = await this.createSessionTokens(user, clientContext);
+        return {
+            accessToken: sessionTokens.accessToken,
+            refreshToken: sessionTokens.refreshToken,
+            MappedUser: sessionTokens.mappedUser,
+        };
+    }
+    async logout(refreshToken) {
+        if (!refreshToken) {
+            return;
+        }
+        const currentSession = await this._sessionRepo.findSessionByTokenHash((0, crypto_util_1.hashSecureToken)(refreshToken));
+        if (!currentSession) {
+            return;
+        }
+        await this._sessionRepo.revokeSession(currentSession._id);
     }
     async forgotPassword(email) {
         const isUserExist = await this._userRepo.findUserByEmail(email);
@@ -145,18 +201,17 @@ class AuthService {
         if (!result) {
             throw (0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.INTERNAL_SERVER_ERROR, error_message_const_1.HttpResponse.SERVER_ERROR);
         }
+        await this._sessionRepo.revokeUserSessions(result._id);
         await redis_config_1.default.del(key);
         return result.email;
     }
     async generateToken(user) {
-        const payload = {
-            _id: user._id,
-            email: user.email,
-            role: user.role,
-            ApprovalStatus: user.ApprovalStatus,
+        const sessionTokens = await this.createSessionTokens(user, undefined);
+        return {
+            accessToken: sessionTokens.accessToken,
+            refreshToken: sessionTokens.refreshToken,
+            user: sessionTokens.mappedUser,
         };
-        const { accessToken, refreshToken } = (0, jwt_token_util_1.generateTokens)(payload);
-        return { accessToken, refreshToken, payload };
     }
 }
 exports.AuthService = AuthService;

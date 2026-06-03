@@ -6,19 +6,28 @@ import { HttpResponse } from "../../const/error-message.const";
 import { successResponse } from "../../utils/response.util";
 import { createHttpError } from "../../utils/http-error";
 import { clearCookies } from "../../utils/clearCookies.util";
-import { setAccessToken, setRefreshToken } from "../../utils/cookie.util";
+import { setRefreshToken } from "../../utils/cookie.util";
 import { IUserModel } from "../../models/user.model";
 import { env } from "../../config/env.config";
+import { IAuthClientContext } from "../../services/interface/IAuthService";
 
 export class AuthController implements IAuthController {
   constructor(private _authService: IAuthService) {}
 
-  private extractAccessToken(req: Request): string | null {
-    const cookieToken = req.cookies?.accessToken;
-    if (cookieToken) {
-      return cookieToken;
-    }
+  private getClientContext(req: Request): IAuthClientContext {
+    const forwardedFor = req.headers["x-forwarded-for"];
+    
+    const ipAddress = Array.isArray(forwardedFor)
+      ? forwardedFor[0]
+      : forwardedFor?.split(",")[0]?.trim() ?? req.ip;
 
+    return {
+      ip: ipAddress,
+      userAgent: req.get("user-agent") ?? undefined,
+    };
+  }
+
+  private extractAccessToken(req: Request): string | null {
     const authorizationHeader = req.headers.authorization;
     if (authorizationHeader?.startsWith("Bearer ")) {
       return authorizationHeader.slice(7).trim();
@@ -44,12 +53,15 @@ export class AuthController implements IAuthController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const token = await this._authService.verifyEmail(req.body);
-      setAccessToken(res, token.accessToken);
+      const token = await this._authService.verifyEmail(
+        req.body,
+        this.getClientContext(req),
+      );
       setRefreshToken(res, token.refreshToken);
       res.status(HttpStatus.OK).json(
         successResponse(HttpResponse.LOGGED_IN_SUCCESSFULLY, {
           token: token.accessToken,
+          user: token.user,
         }),
       );
     } catch (error) {
@@ -86,18 +98,21 @@ export class AuthController implements IAuthController {
 
       if (!refreshToken) {
         throw createHttpError(
-          HttpStatus.FORBIDDEN,
+          HttpStatus.UNAUTHORIZED,
           HttpResponse.REFRESH_TOKEN_EXPIRED,
         );
       }
 
-      const { newAccessToken, payload } =
-        await this._authService.refreshAccessToken(refreshToken);
+      const { newAccessToken, newRefreshToken, user } =
+        await this._authService.refreshAccessToken(
+          refreshToken,
+          this.getClientContext(req),
+        );
 
-      setAccessToken(res, newAccessToken);
+      setRefreshToken(res, newRefreshToken);
       res.status(HttpStatus.OK).json(
         successResponse(HttpResponse.OK, {
-          user: payload,
+          user,
           token: newAccessToken,
         }),
       );
@@ -110,8 +125,11 @@ export class AuthController implements IAuthController {
     try {
       const { email, password } = req.body;
 
-      const tokensAndUserData = await this._authService.login(email, password);
-      setAccessToken(res, tokensAndUserData.accessToken);
+      const tokensAndUserData = await this._authService.login(
+        email,
+        password,
+        this.getClientContext(req),
+      );
       setRefreshToken(res, tokensAndUserData.refreshToken);
 
       res.status(HttpStatus.OK).json(
@@ -127,6 +145,7 @@ export class AuthController implements IAuthController {
 
   async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      await this._authService.logout(req.cookies?.refreshToken);
       clearCookies(res);
       res
         .status(HttpStatus.OK)
@@ -186,10 +205,9 @@ export class AuthController implements IAuthController {
         req.user as IUserModel,
       );
 
-      setAccessToken(res, data.accessToken);
       setRefreshToken(res, data.refreshToken);
 
-      res.redirect(`${env.CLIENT_URL_2}/?token=${data.accessToken}`);
+      res.redirect(`${env.CLIENT_URL_2}/auth/google/callback`);
     } catch (error) {
       res.redirect(`${env.CLIENT_ORGIN}/auth/signup`);
       next(error);

@@ -3,7 +3,7 @@ import { LoginComponent } from "../../components/auth-components/Login";
 import type { ISignUp, UserRoleType } from "../../types/auth.types";
 import { AuthService } from "../../service/auth.service";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { Spinner } from "../../components/templates/Spinner";
 import { useAuth } from "../../context/auth.context";
@@ -15,6 +15,7 @@ const LoginPage: React.FC = () => {
   const [isLoading, setLoading] = useState(false);
 
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { login } = useAuth();
   const handleAuthSubmit = async (data: ISignUp) => {
@@ -22,12 +23,16 @@ const LoginPage: React.FC = () => {
       setLoading(true);
       const user = await login(data);
 
-      const redirectPath =
+      const roleDashboard =
         user.role === UserRole.ADMIN
           ? "/admin/dashboard"
           : user.role === UserRole.MENTOR
             ? "/mentor/dashboard"
             : "/learner/dashboard";
+
+      const requestedPath = (location.state as { from?: { pathname?: string } } | null)
+        ?.from?.pathname;
+      const redirectPath = requestedPath || roleDashboard;
 
       navigate(redirectPath, { replace: true });
     } catch (error) {

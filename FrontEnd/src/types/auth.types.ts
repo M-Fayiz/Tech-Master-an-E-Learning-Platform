@@ -22,6 +22,7 @@ export interface IDecodedUserType {
   name?: string;
   email: string;
   role: UserRoleType;
+  isVerified: boolean;
   profile?: string;
   ApprovalStatus?: mentorApprovalStatus;
   isRequested?: boolean;

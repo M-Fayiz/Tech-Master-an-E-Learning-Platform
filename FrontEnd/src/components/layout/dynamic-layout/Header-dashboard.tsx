@@ -99,7 +99,7 @@ const Header: React.FC<IHeaderProbs> = ({
               </div>
               <div className="py-2">
                 <Link
-                  to={`/${user.role}/profile/${user.id}`}
+                  to={`/${user.role}/profile/u`}
                   className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                 >
                   <User className="w-4 h-4 mr-3" />
