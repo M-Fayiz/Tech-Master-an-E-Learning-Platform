@@ -13,6 +13,17 @@ const socketEvents_const_1 = require("../const/socketEvents.const");
 const chat_socket_1 = require("./chat.socket");
 const video_socket_1 = require("./video.socket");
 let io;
+
+const getCookieValue = (cookieHeader, key) => {
+    if (!cookieHeader)
+        return null;
+    const cookies = cookieHeader.split(";").map((cookie) => cookie.trim());
+    const target = cookies.find((cookie) => cookie.startsWith(`${key}=`));
+    return target
+        ? decodeURIComponent(target.split("=").slice(1).join("="))
+        : null;
+};
+
 const intitializeSocket = (server) => {
     io = new socket_io_1.Server(server, {
         cors: {

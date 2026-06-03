@@ -68,5 +68,7 @@ export interface IEnrolledRepository {
     learnerId: Types.ObjectId,
     populate: string[],
   ): Promise<InProgressCourse[] | null>;
-  findEnrlloedCourse(filter:FilterQuery<IEnrolledModel>):Promise<IEnrolledModel|null>
+  findEnrlloedCourse(
+    filter: FilterQuery<IEnrolledModel>,
+  ): Promise<IEnrolledModel | null>;
 }

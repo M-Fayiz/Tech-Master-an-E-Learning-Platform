@@ -1,6 +1,5 @@
 import { TransactionType } from "../const/transaction.const";
 
-
 export interface IAdminRevenue {
   _id: null;
   revenue: number;
@@ -15,8 +14,7 @@ export interface SourceOfRevanye {
   value: number;
 }
 
-export interface Mentorstatus{
-    approved: number,
-    rejected: number
-  }
-
+export interface Mentorstatus {
+  approved: number;
+  rejected: number;
+}

@@ -36,7 +36,7 @@ const AuthSessionSchema = new mongoose.Schema(
     revokedAt: {
       type: Date,
       default: null,
-    },  
+    },
     replacedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: DbModelName.AUTH_SESSION,

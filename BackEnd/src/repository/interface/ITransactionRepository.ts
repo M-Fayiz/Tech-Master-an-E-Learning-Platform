@@ -29,6 +29,9 @@ export interface ITransactionRepository {
     transactionId: Types.ObjectId,
     updateData: UpdateQuery<ITransactionModel>,
   ): Promise<ITransactionModel | null>;
-  getTransactionHistory(skip:number,limit:number):Promise<ITransactionModel[]|null>
-  getTotalTransaction():Promise<number>
+  getTransactionHistory(
+    skip: number,
+    limit: number,
+  ): Promise<ITransactionModel[] | null>;
+  getTotalTransaction(): Promise<number>;
 }

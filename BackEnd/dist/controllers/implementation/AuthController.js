@@ -32,7 +32,9 @@ class AuthController {
     async signUp(req, res, next) {
         try {
             const email = await this._authService.signUp(req.body);
-            res.status(http_status_const_1.HttpStatus.OK).json((0, response_util_1.successResponse)(error_message_const_1.HttpResponse.OK, { email }));
+            res
+                .status(http_status_const_1.HttpStatus.OK)
+                .json((0, response_util_1.successResponse)(error_message_const_1.HttpResponse.OK, { email }));
         }
         catch (error) {
             next(error);
@@ -58,7 +60,9 @@ class AuthController {
                 return next((0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.UNAUTHORIZED, error_message_const_1.HttpResponse.UNAUTHORIZED));
             }
             const user = await this._authService.authMe(accessToken);
-            res.status(http_status_const_1.HttpStatus.OK).json((0, response_util_1.successResponse)(error_message_const_1.HttpResponse.OK, { user }));
+            res
+                .status(http_status_const_1.HttpStatus.OK)
+                .json((0, response_util_1.successResponse)(error_message_const_1.HttpResponse.OK, { user }));
         }
         catch (error) {
             next(error);
@@ -110,7 +114,9 @@ class AuthController {
     async forgotPassword(req, res, next) {
         try {
             const email = await this._authService.forgotPassword(req.body.email);
-            res.status(http_status_const_1.HttpStatus.OK).json((0, response_util_1.successResponse)(error_message_const_1.HttpResponse.OK, { email }));
+            res
+                .status(http_status_const_1.HttpStatus.OK)
+                .json((0, response_util_1.successResponse)(error_message_const_1.HttpResponse.OK, { email }));
         }
         catch (error) {
             next(error);

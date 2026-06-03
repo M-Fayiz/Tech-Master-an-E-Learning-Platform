@@ -46,17 +46,24 @@ export class OrderController implements IOrderController {
       next(error);
     }
   };
-  getTransactionHistory=async(req: Request, res: Response, next: NextFunction): Promise<void>=> {
+  getTransactionHistory = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
     try {
-      const user=req.user as{role:IRole}
-      const {page}=req.query
-      const {transactionHistory,totalPage}= await this._orderService.getTransactionHistory(user.role,Number(page))
+      const user = req.user as { role: IRole };
+      const { page } = req.query;
+      const { transactionHistory, totalPage } =
+        await this._orderService.getTransactionHistory(user.role, Number(page));
 
       res
         .status(HttpStatus.OK)
-        .json(successResponse(HttpResponse.OK, { transactionHistory,totalPage }));
+        .json(
+          successResponse(HttpResponse.OK, { transactionHistory, totalPage }),
+        );
     } catch (error) {
-      next(error)
+      next(error);
     }
-  }
+  };
 }

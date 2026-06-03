@@ -10,9 +10,11 @@ class ChatbotController {
         this.chat = async (req, res, next) => {
             try {
                 const { learnerId, courseId, message } = req.body;
-                console.log('message :', message);
+                console.log("message :", message);
                 const createdChat = await this._chatbotService.createChat(learnerId, courseId, message);
-                res.status(http_status_const_1.HttpStatus.OK).json((0, response_util_1.successResponse)(error_message_const_1.HttpResponse.OK, { createdChat }));
+                res
+                    .status(http_status_const_1.HttpStatus.OK)
+                    .json((0, response_util_1.successResponse)(error_message_const_1.HttpResponse.OK, { createdChat }));
             }
             catch (error) {
                 next(error);
@@ -22,7 +24,9 @@ class ChatbotController {
             try {
                 const { learnerId, courseId } = req.params;
                 const chatMessage = await this._chatbotService.fetchChat(learnerId, courseId);
-                res.status(http_status_const_1.HttpStatus.OK).json((0, response_util_1.successResponse)(error_message_const_1.HttpResponse.OK, { chatMessage }));
+                res
+                    .status(http_status_const_1.HttpStatus.OK)
+                    .json((0, response_util_1.successResponse)(error_message_const_1.HttpResponse.OK, { chatMessage }));
             }
             catch (error) {
                 next(error);

@@ -40,7 +40,10 @@ export class ChatRepository
       },
     });
   }
-  async resetUnreadMsg(chatId: Types.ObjectId, userId: Types.ObjectId): Promise<IChatModel | null> {
+  async resetUnreadMsg(
+    chatId: Types.ObjectId,
+    userId: Types.ObjectId,
+  ): Promise<IChatModel | null> {
     return await this.findByIDAndUpdate(chatId, {
       $inc: {
         [`unreadCount.${userId}`]: 0,

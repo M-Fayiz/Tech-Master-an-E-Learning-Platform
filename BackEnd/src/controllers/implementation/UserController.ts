@@ -16,10 +16,8 @@ export class UserController implements IUserController {
     next: NextFunction,
   ): Promise<void> => {
     try {
-     
+      const user = req.user as { _id: string };
 
-      const user=req.user as  {_id:string}
-  
       const userData = await this._userService.fetchUser(user._id);
 
       res
@@ -36,7 +34,7 @@ export class UserController implements IUserController {
   ): Promise<void> => {
     try {
       const { currentPassword, newPassword } = req.body;
-      const user=req.user as  {_id:string}
+      const user = req.user as { _id: string };
 
       await this._userService.changePassword(
         user._id,
@@ -58,9 +56,9 @@ export class UserController implements IUserController {
   ): Promise<void> => {
     try {
       const { imageURL } = req.body;
-       const user=req.user as  {_id:string}
-     
-        const ImageSavedUrl = await this._userService.userProfilePitcureUpdate(
+      const user = req.user as { _id: string };
+
+      const ImageSavedUrl = await this._userService.userProfilePitcureUpdate(
         imageURL,
         user._id,
       );
@@ -77,8 +75,7 @@ export class UserController implements IUserController {
     next: NextFunction,
   ): Promise<void> => {
     try {
-   
-        const user=req.user as {_id:string}
+      const user = req.user as { _id: string };
       const updatedData = await this._userService.updateUserProfile(
         user._id,
         req.body,
@@ -111,7 +108,7 @@ export class UserController implements IUserController {
     next: NextFunction,
   ): Promise<void> => {
     try {
-      const user=req.user as  {_id:string}
+      const user = req.user as { _id: string };
       const userData = req.body;
       const mentorDataAndNotify = await this._userService.addMentorData(
         user._id,

@@ -64,9 +64,7 @@ const registerChatHandler = (io, socket) => {
             if (!room_id || !senderId) {
                 throw (0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.BAD_REQUEST, error_message_const_1.HttpResponse.INVALID_ID);
             }
-            const otherUsers = chat.users
-                .map(String)
-                .filter((id) => id !== userId);
+            const otherUsers = chat.users.map(String).filter((id) => id !== userId);
             if (otherUsers.length !== 1) {
                 throw new Error("Invalid one-to-one chat state");
             }

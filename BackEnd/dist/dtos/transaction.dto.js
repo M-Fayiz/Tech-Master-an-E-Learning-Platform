@@ -10,6 +10,6 @@ function transactionHistoryDto(data, role) {
         paymentTypes: data.paymentType,
         status: data.status,
         mentorShare: role == user_types_1.IRole.Admin ? data.mentorShare : 0,
-        share: role == user_types_1.IRole.Admin ? data.adminShare : data.mentorShare
+        share: role == user_types_1.IRole.Admin ? data.adminShare : data.mentorShare,
     };
 }

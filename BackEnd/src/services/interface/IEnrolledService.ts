@@ -15,7 +15,6 @@ import { IMentorDhasboardDTO } from "../../types/dtos.type/mentorDashboard.dto.t
 
 import { IProgressTrack } from "../../types/enrollment.types";
 
-
 export interface IEnrolledService {
   getEnrolledCourses(learnerId: string): Promise<IEnrolledListDto[]>;
   getEnrolledCourseDetails(
@@ -30,7 +29,6 @@ export interface IEnrolledService {
   getCourseEnrolledDashboardData(
     courseId: string,
     mentorId: string,
-
   ): Promise<CourseDashboardDTO | null>;
   getTrendingCourseGraph(
     courseId: string,

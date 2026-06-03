@@ -75,7 +75,7 @@ class CourseService {
         if (!courseList) {
             throw (0, http_error_1.createHttpError)(http_status_const_1.HttpStatus.NOT_FOUND, error_message_const_1.HttpResponse.ITEM_NOT_FOUND);
         }
-        const enrolledIds = new Set(enrolledCourse?.map((c) => c.courseId.toString()));
+        const enrolledIds = new Set(enrolledCourse?.map((c) => String(c.courseId._id ?? c.courseId)));
         const mappedCourseList = courseList.map((course) => (0, course_dtos_1.courseListDTO)(course, enrolledIds));
         let totalPage = totalDocument / limit;
         return { courseData: mappedCourseList, totalPage };

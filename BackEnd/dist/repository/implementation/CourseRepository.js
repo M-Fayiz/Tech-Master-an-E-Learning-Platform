@@ -55,7 +55,10 @@ class CourseRepository extends baseRepository_1.BaseRepository {
         return this.pushToArray({ _id: courseId }, "sessions", session);
     }
     async addLecture(courseId, sessionId, lecture) {
-        return this.model.findOneAndUpdate({ _id: courseId, "sessions._id": sessionId }, { $push: { "sessions.$.lectures": lecture } }, { new: true }).lean().exec();
+        return this.model
+            .findOneAndUpdate({ _id: courseId, "sessions._id": sessionId }, { $push: { "sessions.$.lectures": lecture } }, { new: true })
+            .lean()
+            .exec();
     }
     async findSession(courseId, title) {
         return await this.findOne({
@@ -129,17 +132,22 @@ class CourseRepository extends baseRepository_1.BaseRepository {
         return await this.findOne({ _id: courseId });
     }
     async removeSession(courseId, sessionId) {
-        return this.pullFromArray({ _id: courseId }, "sessions", { _id: sessionId });
+        return this.pullFromArray({ _id: courseId }, "sessions", {
+            _id: sessionId,
+        });
     }
     async removeLecture(courseId, sessionId, lectureId) {
-        return this.model.findOneAndUpdate({
+        return this.model
+            .findOneAndUpdate({
             _id: courseId,
             "sessions._id": sessionId,
         }, {
             $pull: {
                 "sessions.$.lectures": { _id: lectureId },
             },
-        }, { new: true }).lean().exec();
+        }, { new: true })
+            .lean()
+            .exec();
     }
 }
 exports.CourseRepository = CourseRepository;

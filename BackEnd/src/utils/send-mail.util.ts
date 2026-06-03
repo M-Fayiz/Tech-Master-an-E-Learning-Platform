@@ -1,4 +1,3 @@
-
 import { env } from "../config/env.config";
 import { resend } from "../config/resend.config";
 
@@ -15,7 +14,6 @@ const logLocalEmail = (subject: string, email: string, targetUrl?: string) => {
   }
 };
 
-
 export const sendToken = async (
   email: string,
   token: string,
@@ -30,7 +28,7 @@ export const sendToken = async (
 
   try {
     await resend!.emails.send({
-      from: "CodeAspire <no-reply@codeaspire.online>", 
+      from: "CodeAspire <no-reply@codeaspire.online>",
       to: email,
       subject: "CodeAspire Sync OTP Verification",
       html: ` 
@@ -116,7 +114,7 @@ export const sendMail = async (
   }
 
   try {
-    await resend!.emails.send( {
+    await resend!.emails.send({
       from: "CodeAspire <no-reply@codeaspire.online>",
       to: email,
       subject: "CodeAspire Course related Status",
@@ -126,9 +124,7 @@ export const sendMail = async (
                 <p>.</p>
                 <p>— CodeAspire Team</p>
             `,
-    })
-
-  
+    });
   } catch (error) {
     console.log(error);
   }

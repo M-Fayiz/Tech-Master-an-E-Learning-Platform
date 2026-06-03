@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 import { env } from "./env.config";
 
-
 const URL = env.MONGO_URL as string;
 
 export const dbConnect = async () => {

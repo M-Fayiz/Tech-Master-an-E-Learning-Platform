@@ -2,9 +2,7 @@ import { Schema, model, Types, Document } from "mongoose";
 import { IBotMessage, IChatBot, Sender } from "../types/chatBot.type";
 import { DbModelName } from "../const/modelName.const";
 
-
-export interface  IChatBotModel extends IChatBot,Document<Types.ObjectId>{}
-
+export interface IChatBotModel extends IChatBot, Document<Types.ObjectId> {}
 
 const messageSchema = new Schema<IBotMessage>({
   role: {
@@ -36,7 +34,7 @@ const courseChatSchema = new Schema<IChatBotModel>(
     },
     messages: [messageSchema],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export const ChatbotModel = model(DbModelName.CHAT_BOT, courseChatSchema);

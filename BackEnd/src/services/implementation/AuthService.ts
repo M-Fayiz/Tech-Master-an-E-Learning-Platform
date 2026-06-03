@@ -129,7 +129,9 @@ export class AuthService implements IAuthService {
       isRequested: false,
     };
 
-    const isExistingUser = await this._userRepo.findUserByEmail(storedData.email);
+    const isExistingUser = await this._userRepo.findUserByEmail(
+      storedData.email,
+    );
     if (isExistingUser) {
       await redisClient.del(key);
       throw createHttpError(HttpStatus.CONFLICT, HttpResponse.USER_EXIST);

@@ -13,5 +13,5 @@ export enum DbModelName {
   USER = "User",
   MESSAGE = "Message",
   CERTIFICATE = "Certificate",
-  CHAT_BOT='ChatBot'
+  CHAT_BOT = "ChatBot",
 }

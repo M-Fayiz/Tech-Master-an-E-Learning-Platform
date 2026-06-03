@@ -162,15 +162,17 @@ export class ChatService implements IChatService {
     return chatDto(updatedData);
   }
   async resetUnreadMsg(chatId: string, userId: string): Promise<IChatDTO> {
+    const user_id = parseObjectId(userId);
+    const chat_Id = parseObjectId(chatId);
 
-    const user_id=parseObjectId(userId)
-    const chat_Id=parseObjectId(chatId)
-    
-    if(!user_id||!chat_Id){
-      throw createHttpError(HttpStatus.BAD_REQUEST,HttpResponse.INVALID_ID)
+    if (!user_id || !chat_Id) {
+      throw createHttpError(HttpStatus.BAD_REQUEST, HttpResponse.INVALID_ID);
     }
 
-    const updatedData = await this._chatRepository.resetUnreadMsg(chat_Id,user_id)
+    const updatedData = await this._chatRepository.resetUnreadMsg(
+      chat_Id,
+      user_id,
+    );
 
     if (!updatedData) {
       throw createHttpError(

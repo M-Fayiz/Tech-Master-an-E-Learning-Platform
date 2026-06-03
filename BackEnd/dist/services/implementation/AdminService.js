@@ -128,14 +128,17 @@ class AdminService {
     }
     async getDashboardData(filter, startDay, endDay) {
         const { start, end } = (0, dashFilterGenerator_utils_1.timeFilter)(filter, startDay, endDay);
-        const [mentors, learners, courseCount, revenue, topCourse, topCategory, mentorStatus] = await Promise.all([
+        const [mentors, learners, courseCount, revenue, topCourse, topCategory, mentorStatus,] = await Promise.all([
             this._userRepo.findDashBoardUserCount(user_types_1.IRole.Mentor, start, end),
             this._userRepo.findDashBoardUserCount(user_types_1.IRole.Learner, start, end),
             this._courseRepository.findDocumentCount({}, start, end),
             this._transactionRepository.getAdminRevenue(start, end),
             this._enrolledRepository.getTopSellingCourse(undefined, start, end),
             this._enrolledRepository.getTopSellingCategory(),
-            this._userRepo.getMentorStatus({ role: user_types_1.IRole.Mentor, createdAt: { $gte: start, $lte: end } })
+            this._userRepo.getMentorStatus({
+                role: user_types_1.IRole.Mentor,
+                createdAt: { $gte: start, $lte: end },
+            }),
         ]);
         const mentorStatusData = mentorStatus[0] ?? { approved: 0, rejected: 0 };
         return (0, adminDashboard_dto_1.adminDashboardDTO)(mentors, learners, courseCount, revenue, topCourse, topCategory, mentorStatusData);

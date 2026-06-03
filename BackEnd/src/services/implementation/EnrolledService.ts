@@ -5,7 +5,6 @@ import { parseObjectId } from "../../mongoose/objectId";
 import { ICourseRepository } from "../../repository/interface/ICourseRepository";
 import { IEnrolledRepository } from "../../repository/interface/IEnrolledRepositoy";
 import {
-  IFormCourseDTO,
   IPopulatedCourse,
 } from "../../types/dtos.type/course.dtos.type";
 import { createHttpError } from "../../utils/http-error";
@@ -80,25 +79,9 @@ export class EnrolledService implements IEnrolledService {
       throw createHttpError(HttpStatus.NOT_FOUND, HttpResponse.ITEM_NOT_FOUND);
     }
 
-    const populatedEnrolledCourse = await Promise.all(
-      enrolledData.map(async (course) => {
-        const data = await this._courseRepository.findCourse(
-          course.courseId as Types.ObjectId,
-        );
-        if (!data) return null;
-
-        const populatedCourse = formCourseDto(data as IPopulatedCourse);
-
-        return {
-          ...course,
-          courseId: populatedCourse as IFormCourseDTO,
-        };
-      }),
-    );
-
-    return populatedEnrolledCourse.map((course) =>
-      enrolledListDTO(course as IEnrolledModel),
-    );
+    return enrolledData.map((enrollment) =>
+  enrolledListDTO(enrollment as IEnrolledModel),
+);
   }
   async getEnrolledCourseDetails(
     enrolledId: string,

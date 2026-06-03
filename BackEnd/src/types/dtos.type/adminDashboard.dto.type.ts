@@ -16,5 +16,5 @@ export interface IAdminDashboardDTO {
     course: ITopCourse[];
     category: ITopCategory[];
   };
-  mentorStatus:Mentorstatus
+  mentorStatus: Mentorstatus;
 }

@@ -1,5 +1,9 @@
 import { Types } from "mongoose";
-import { AuthSessionModel, IAuthSession, IAuthSessionModel } from "../../models/session.model";
+import {
+  AuthSessionModel,
+  IAuthSession,
+  IAuthSessionModel,
+} from "../../models/session.model";
 import { BaseRepository } from "../baseRepository";
 import { ISessionRepository } from "../interface/ISessionRepository";
 

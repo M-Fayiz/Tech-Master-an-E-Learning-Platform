@@ -119,19 +119,21 @@ class UserRepository extends baseRepository_1.BaseRepository {
     async getMentorStatus(filter) {
         return await this.aggregate([
             { $match: filter },
-            { $group: {
+            {
+                $group: {
                     _id: null,
                     approved: {
                         $sum: {
-                            $cond: [{ $eq: ["$ApprovalStatus", 'approved'] }, 1, 0]
-                        }
+                            $cond: [{ $eq: ["$ApprovalStatus", "approved"] }, 1, 0],
+                        },
                     },
                     rejected: {
                         $sum: {
-                            $cond: [{ $eq: ["$ApprovalStatus", 'rejected'] }, 1, 0]
-                        }
+                            $cond: [{ $eq: ["$ApprovalStatus", "rejected"] }, 1, 0],
+                        },
                     },
-                } }
+                },
+            },
         ]);
     }
 }

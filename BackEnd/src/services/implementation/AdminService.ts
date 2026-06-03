@@ -185,18 +185,27 @@ export class AdminService implements IAdminService {
   ): Promise<IAdminDashboardDTO> {
     const { start, end } = timeFilter(filter, startDay, endDay);
 
-    const [mentors, learners, courseCount, revenue, topCourse, topCategory,mentorStatus] =
-      await Promise.all([
-        this._userRepo.findDashBoardUserCount(IRole.Mentor, start, end),
-        this._userRepo.findDashBoardUserCount(IRole.Learner, start, end),
-        this._courseRepository.findDocumentCount({}, start, end),
-        this._transactionRepository.getAdminRevenue(start, end),
-        this._enrolledRepository.getTopSellingCourse(undefined, start, end),
-        this._enrolledRepository.getTopSellingCategory(),
-        this._userRepo.getMentorStatus({role:IRole.Mentor,createdAt:{$gte:start,$lte:end}})
-      ]);
-    const mentorStatusData =
-  mentorStatus[0] ?? { approved: 0, rejected: 0 };
+    const [
+      mentors,
+      learners,
+      courseCount,
+      revenue,
+      topCourse,
+      topCategory,
+      mentorStatus,
+    ] = await Promise.all([
+      this._userRepo.findDashBoardUserCount(IRole.Mentor, start, end),
+      this._userRepo.findDashBoardUserCount(IRole.Learner, start, end),
+      this._courseRepository.findDocumentCount({}, start, end),
+      this._transactionRepository.getAdminRevenue(start, end),
+      this._enrolledRepository.getTopSellingCourse(undefined, start, end),
+      this._enrolledRepository.getTopSellingCategory(),
+      this._userRepo.getMentorStatus({
+        role: IRole.Mentor,
+        createdAt: { $gte: start, $lte: end },
+      }),
+    ]);
+    const mentorStatusData = mentorStatus[0] ?? { approved: 0, rejected: 0 };
     return adminDashboardDTO(
       mentors,
       learners,
@@ -204,8 +213,7 @@ export class AdminService implements IAdminService {
       revenue,
       topCourse,
       topCategory,
-     mentorStatusData
+      mentorStatusData,
     );
   }
-
 }

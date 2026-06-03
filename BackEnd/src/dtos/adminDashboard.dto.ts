@@ -9,22 +9,22 @@ export function adminDashboardDTO(
   revenue: SourceOfRevanye[],
   topCourse: ITopCourse[],
   topCategory: ITopCategory[],
-  mentorStatus:Mentorstatus
+  mentorStatus: Mentorstatus,
 ): IAdminDashboardDTO {
   let updated = revenue.map((data) => ({ name: data._id, value: data.value }));
 
   return {
     totalCourses: courses,
     totalLearners: learners,
-    totalMentors: mentor, 
+    totalMentors: mentor,
     SourceOfRevenue: updated,
     topSelling: {
       category: topCategory,
       course: topCourse,
     },
-    mentorStatus:{
-      approved:mentorStatus.approved??0,
-      rejected:mentorStatus.rejected??0
-    }
+    mentorStatus: {
+      approved: mentorStatus.approved ?? 0,
+      rejected: mentorStatus.rejected ?? 0,
+    },
   };
 }

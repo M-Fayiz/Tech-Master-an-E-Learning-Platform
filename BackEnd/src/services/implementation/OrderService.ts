@@ -261,16 +261,25 @@ export class OrderService implements IOrderService {
 
     return session;
   }
-  async getTransactionHistory(role: IRole,page:number): Promise<{transactionHistory:ITransactionDTO[],totalPage:number}> {
-    let limit=8
-    let skip=(page-1)*limit
-    const trasnsactionData=await this._transactionRepository.getTransactionHistory(skip,limit)
-    
-    const totalPage= await this._transactionRepository.getTotalTransaction()
-    if(!trasnsactionData){
-      throw createHttpError(HttpStatus.NOT_FOUND,HttpResponse.ITEM_NOT_FOUND)
+  async getTransactionHistory(
+    role: IRole,
+    page: number,
+  ): Promise<{ transactionHistory: ITransactionDTO[]; totalPage: number }> {
+    let limit = 8;
+    let skip = (page - 1) * limit;
+    const trasnsactionData =
+      await this._transactionRepository.getTransactionHistory(skip, limit);
+
+    const totalPage = await this._transactionRepository.getTotalTransaction();
+    if (!trasnsactionData) {
+      throw createHttpError(HttpStatus.NOT_FOUND, HttpResponse.ITEM_NOT_FOUND);
     }
 
-    return  {transactionHistory:trasnsactionData.map(data=>transactionHistoryDto(data,role)),totalPage:Math.floor(totalPage/limit)}
+    return {
+      transactionHistory: trasnsactionData.map((data) =>
+        transactionHistoryDto(data, role),
+      ),
+      totalPage: Math.floor(totalPage / limit),
+    };
   }
 }

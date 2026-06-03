@@ -11,6 +11,7 @@ class EnrolledController {
             try {
                 const user = req.user;
                 const enrolledCourseData = await this._enrolledService.getEnrolledCourses(user._id);
+                console.log('enrolled data :', enrolledCourseData);
                 res
                     .status(http_status_const_1.HttpStatus.OK)
                     .json((0, response_util_1.successResponse)(error_message_const_1.HttpResponse.OK, { enrolledCourseData }));

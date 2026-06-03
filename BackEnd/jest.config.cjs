@@ -1,14 +1,14 @@
 /** @type {import('jest').Config} */
 module.exports = {
-  testEnvironment: 'node',
-  roots: ['<rootDir>/src/_tests_'],
-  testMatch: ['**/*.test.ts'],
+  testEnvironment: "node",
+  roots: ["<rootDir>/src/_tests_"],
+  testMatch: ["**/*.test.ts"],
   transform: {
-    '^.+\\.tsx?$': [
-      'ts-jest',
+    "^.+\\.tsx?$": [
+      "ts-jest",
       {
         tsconfig: {
-          module: 'CommonJS',
+          module: "CommonJS",
         },
       },
     ],

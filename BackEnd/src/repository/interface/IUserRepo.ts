@@ -68,5 +68,5 @@ export interface IUserRepo {
     learnerId: Types.ObjectId,
     updatedData: ILearnerStreask,
   ): Promise<ILearnerModel | null>;
-  getMentorStatus(filter: FilterQuery<IUserModel>):Promise<Mentorstatus[]>
+  getMentorStatus(filter: FilterQuery<IUserModel>): Promise<Mentorstatus[]>;
 }
